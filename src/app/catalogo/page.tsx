@@ -31,7 +31,7 @@ function toProduct(p: any): Product {
     nombre: p.nombre ?? p.name ?? "Sin nombre",
     descripcion: p.descripcion ?? p.description ?? "",
     precio: Number(p.precio ?? p.price ?? 0),
-    imagenUrl: p.imagenUrl ?? p.image ?? p.images?.[0] || undefined,
+    imagenUrl: (p.imagenUrl ?? p.image ?? p.images?.[0]) || undefined,
     stock: typeof p.stock === "number" ? p.stock : Number(p.stock ?? 0),
     // Mapeamos distintos nombres usados en DB a tu 'seccion'
     seccion: p.seccion ?? p.coleccion ?? p.collection ?? p.category ?? "",

@@ -4,30 +4,30 @@ import Link from "next/link";
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ProductCard, { Product } from "@/components/ProductCard";
 
-// acepta múltiples shapes de API
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RawItem = Record<string, any>;
 type AnyList =
-  | Product[]
-  | { items?: any[]; products?: any[]; data?: any[] }
+  | RawItem[]
+  | { items?: RawItem[]; products?: RawItem[]; data?: RawItem[] }
   | undefined
   | null;
 
-function toProduct(p: any): Product {
+function toProduct(p: RawItem): Product {
   return {
     _id: String(p._id ?? p.id ?? crypto.randomUUID()),
     nombre: p.nombre ?? p.name ?? "Sin nombre",
     descripcion: p.descripcion ?? p.description ?? "",
     precio: Number(p.precio ?? p.price ?? 0),
-    imagenUrl: p.imagenUrl ?? p.image ?? p.images?.[0] || undefined,
+    imagenUrl: (p.imagenUrl ?? p.image ?? p.images?.[0]) || undefined,
     stock: typeof p.stock === "number" ? p.stock : Number(p.stock ?? 0),
-    // tu card suele aceptar 'seccion' para colección
     seccion: p.seccion ?? p.coleccion ?? p.collection ?? "",
   } as Product;
 }
 
-function pickList(payload: AnyList): any[] {
+function pickList(payload: AnyList): RawItem[] {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload.items)) return payload.items;     // <-- /api/products actual
+  if (Array.isArray(payload.items)) return payload.items;
   if (Array.isArray(payload.products)) return payload.products;
   if (Array.isArray(payload.data)) return payload.data;
   return [];
