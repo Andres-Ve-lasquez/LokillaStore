@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const ADMIN_COOKIE = "admin_auth";
 const SESSION_TOKEN = "lokilla-admin-ok";
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/gestion-lk-2024") && pathname !== "/gestion-lk-2024/login") {
