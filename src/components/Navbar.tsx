@@ -44,46 +44,22 @@ export default function Navbar() {
 
   return (
     <header className="w-full">
-      {/* === Franja superior (NO fija) === */}
-      <div ref={topBarRef} className="bg-white rounded-t-2xl">
+      {/* === Franja superior — oculta en mobile === */}
+      <div ref={topBarRef} className="bg-white hidden md:block">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-3 items-center py-2 text-black text-sm font-semibold">
-            {/* Izquierda vacía para centrar el mensaje */}
-            <div className="hidden md:block" />
-            {/* Centro: mensaje centrado y link a IG */}
-            <div className="flex items-center justify-center gap-2 text-center">
-              <span className="text-xl">←</span>
-              <a
-                href="https://www.instagram.com/lookilla.store/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                <span role="img" aria-label="soporte" className="mr-1">🎧</span>
-                ¿Necesitas ayuda? <span className="font-bold">Toca aquí y hablemos por Instagram.</span>
-              </a>
-              <span className="text-xl">→</span>
-            </div>
-            {/* Derecha: redes */}
-            <div className="flex justify-end items-center gap-4">
-              <a
-                href="https://www.instagram.com/lookilla.store/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram Lookilla"
-                className="hover:opacity-80"
-              >
-                <FaInstagram size={20} />
-              </a>
-              <a
-                href="https://www.tiktok.com/@lookilla.store?lang=es-419"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok Lookilla"
-                className="hover:opacity-80"
-              >
-                <FaTiktok size={20} />
-              </a>
+          <div className="flex items-center justify-between py-2 text-black text-sm font-semibold">
+            <div />
+            <a
+              href="https://www.instagram.com/lookilla.store/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:underline"
+            >
+              🎧 ¿Necesitas ayuda? <span className="font-bold">Hablemos por Instagram</span>
+            </a>
+            <div className="flex items-center gap-4">
+              <a href="https://www.instagram.com/lookilla.store/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:opacity-80"><FaInstagram size={18} /></a>
+              <a href="https://www.tiktok.com/@lookilla.store?lang=es-419" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="hover:opacity-80"><FaTiktok size={18} /></a>
             </div>
           </div>
         </div>
