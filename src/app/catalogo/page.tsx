@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
 import { FiFilter } from "react-icons/fi";
@@ -127,13 +128,16 @@ function ProductCard({ p, onAdd }: { p: Product; onAdd: () => void }) {
 
 /* ===== Página ===== */
 export default function CatalogoPage() {
+  const searchParams = useSearchParams();
   const [productos, setProductos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filtros / UI
   const [showFilters, setShowFilters] = useState(true);
   const [q, setQ] = useState(""); // búsqueda por nombre
-  const [coleccion, setColeccion] = useState<string>("__todas__");
+  const [coleccion, setColeccion] = useState<string>(
+    searchParams.get("coleccion") ?? "__todas__"
+  );
   const [sort, setSort] = useState<SortKey>("none");
 
   const { addItem } = useCart();
@@ -273,7 +277,7 @@ export default function CatalogoPage() {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-16">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-x-8 md:gap-y-16">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="rounded-3xl bg-white p-4 animate-pulse">
               <div className="w-full aspect-[4/3] rounded-2xl bg-slate-200" />
@@ -288,7 +292,7 @@ export default function CatalogoPage() {
           No encontramos productos con esos filtros.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-16">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-x-8 md:gap-y-16">
           {filtrados.map((p) => (
             <ProductCard
               key={p._id}

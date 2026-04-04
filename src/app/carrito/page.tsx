@@ -10,7 +10,7 @@ export default function CarritoPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-5xl font-extrabold tracking-tight mb-8">Contenido del carrito</h1>
+      <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-8">Contenido del carrito</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Lista */}
@@ -23,8 +23,8 @@ export default function CarritoPage() {
           ) : (
             <ul className="divide-y">
               {items.map((it) => (
-                <li key={it.key} className="py-6 grid grid-cols-[100px_1fr_auto] gap-6 items-start">
-                  <div className="relative w-24 h-24 rounded overflow-hidden bg-neutral-100">
+                <li key={it.key} className="py-6 grid grid-cols-[80px_1fr_auto] md:grid-cols-[100px_1fr_auto] gap-4 md:gap-6 items-start">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded overflow-hidden bg-neutral-100">
                     {it.imagenUrl && (
                       <Image
                         src={it.imagenUrl}

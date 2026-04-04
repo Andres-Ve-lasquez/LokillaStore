@@ -82,8 +82,8 @@ export default function Navbar() {
               <div
                 className={`relative logo-float transition-all duration-300
                            ${compact
-                             ? "w-[200px] h-[90px] md:w-[240px] md:h-[108px]"
-                             : "w-[300px] h-[130px] md:w-[340px] md:h-[150px]"}`}
+                             ? "w-[140px] h-[63px] md:w-[240px] md:h-[108px]"
+                             : "w-[180px] h-[81px] md:w-[340px] md:h-[150px]"}`}
               >
                 <Image
                   src="/logo.png"
