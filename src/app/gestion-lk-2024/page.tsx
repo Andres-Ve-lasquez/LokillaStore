@@ -399,7 +399,7 @@ export default function AdminPage() {
           <h1 className="text-xl font-extrabold text-[#1a4876]">Panel Admin</h1>
         </div>
         <button
-          onClick={async () => { await fetch("/api/admin/login", { method: "DELETE" }); window.location.href = "/admin/login"; }}
+          onClick={async () => { await fetch("/api/admin/login", { method: "DELETE" }); window.location.href = "/gestion-lk-2024/login"; }}
           className="text-sm px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium"
         >
           Cerrar sesión

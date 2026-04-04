@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
       });
       const data = await res.json();
       if (data.ok) {
-        router.push("/admin");
+        router.push("/gestion-lk-2024");
         router.refresh();
       } else {
         setError(data.error ?? "Contraseña incorrecta");

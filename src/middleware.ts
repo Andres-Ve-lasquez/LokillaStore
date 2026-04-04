@@ -6,11 +6,11 @@ const SESSION_TOKEN = "lokilla-admin-ok";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  if (pathname.startsWith("/gestion-lk-2024") && pathname !== "/gestion-lk-2024/login") {
     const token = req.cookies.get(ADMIN_COOKIE)?.value;
     if (!token || token !== SESSION_TOKEN) {
       const loginUrl = req.nextUrl.clone();
-      loginUrl.pathname = "/admin/login";
+      loginUrl.pathname = "/gestion-lk-2024/login";
       return NextResponse.redirect(loginUrl);
     }
   }
@@ -19,5 +19,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/gestion-lk-2024/:path*"],
 };
