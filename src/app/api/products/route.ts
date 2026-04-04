@@ -4,8 +4,12 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../lib/dbConnect";
 import Product from "../../../lib/models/Product";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const data = await req.json();
@@ -42,12 +46,23 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const lowStock = searchParams.get("lowStock") === "true";
     const threshold = searchParams.get("threshold");
+    const includeInactive = searchParams.get("includeInactive") === "true";
 
     let filter: any = {};
     if (lowStock) {
+      const unauthorized = await requireAdmin(req);
+      if (unauthorized) return unauthorized;
+
       filter = threshold
         ? { stock: { $lte: Number(threshold) } }
         : { $expr: { $lte: ["$stock", "$minStock"] } };
+    }
+
+    if (includeInactive) {
+      const unauthorized = await requireAdmin(req);
+      if (unauthorized) return unauthorized;
+    } else if (!lowStock) {
+      filter.isActive = true;
     }
 
     const page = Number(searchParams.get("page") || 1);

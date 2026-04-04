@@ -4,15 +4,24 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../../lib/dbConnect";
 import Product from "../../../../lib/models/Product";
+import { requireAdmin } from "@/lib/adminAuth";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   try {
     await dbConnect();
     const { id } = await params;
     const doc = await Product.findById(id);
     if (!doc) return NextResponse.json({ ok: false, error: "No encontrado" }, { status: 404 });
+
+    if (!doc.isActive) {
+      const unauthorized = await requireAdmin(req);
+      if (unauthorized) {
+        return NextResponse.json({ ok: false, error: "No encontrado" }, { status: 404 });
+      }
+    }
+
     return NextResponse.json({ ok: true, product: doc });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
@@ -20,6 +29,9 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 }
 
 export async function PUT(req: NextRequest, { params }: Ctx) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const { id } = await params;
@@ -48,7 +60,10 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, { params }: Ctx) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const { id } = await params;

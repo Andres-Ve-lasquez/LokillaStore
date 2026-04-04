@@ -20,6 +20,10 @@ type CartContextType = {
   removeItem: (key: string) => void;
   setQty: (key: string, qty: number) => void;
   clear: () => void;
+  checkoutNotes: string;
+  setCheckoutNotes: (value: string) => void;
+  acceptedPolicies: boolean;
+  setAcceptedPolicies: (value: boolean) => void;
 
   // Drawer
   open: boolean;
@@ -28,6 +32,7 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null);
 const LS_KEY = 'cart-v1';
+const CHECKOUT_DRAFT_KEY = 'checkout-draft-v1';
 const FREE_SHIPPING_THRESHOLD = 60000;   // $60.000 CLP como en tu ejemplo
 
 function moneyCLP(n: number) {
@@ -44,12 +49,21 @@ export default function CartProvider({ children }: { children: React.ReactNode }
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [checkoutNotes, setCheckoutNotes] = useState('');
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
 
   // Cargar desde localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) setItems(JSON.parse(raw));
+
+      const draftRaw = localStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (draftRaw) {
+        const draft = JSON.parse(draftRaw);
+        setCheckoutNotes(typeof draft.notes === 'string' ? draft.notes : '');
+        setAcceptedPolicies(Boolean(draft.acceptedPolicies));
+      }
     } catch {}
     setMounted(true);
   }, []);
@@ -59,6 +73,17 @@ export default function CartProvider({ children }: { children: React.ReactNode }
     if (!mounted) return;
     localStorage.setItem(LS_KEY, JSON.stringify(items));
   }, [items, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    localStorage.setItem(
+      CHECKOUT_DRAFT_KEY,
+      JSON.stringify({
+        notes: checkoutNotes,
+        acceptedPolicies,
+      })
+    );
+  }, [acceptedPolicies, checkoutNotes, mounted]);
 
   const count = useMemo(() => items.reduce((a, it) => a + it.cantidad, 0), [items]);
   const subtotal = useMemo(() => items.reduce((a, it) => a + it.precio * it.cantidad, 0), [items]);
@@ -86,7 +111,15 @@ export default function CartProvider({ children }: { children: React.ReactNode }
     },
     removeItem: (key) => setItems((prev) => prev.filter((x) => x.key !== key)),
     setQty: (key, qty) => setItems((prev) => prev.map((x) => (x.key === key ? { ...x, cantidad: Math.max(1, qty) } : x))),
-    clear: () => setItems([]),
+    clear: () => {
+      setItems([]);
+      setCheckoutNotes('');
+      setAcceptedPolicies(false);
+    },
+    checkoutNotes,
+    setCheckoutNotes,
+    acceptedPolicies,
+    setAcceptedPolicies,
 
     open,
     setOpen,

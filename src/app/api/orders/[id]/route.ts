@@ -4,10 +4,14 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
+import { requireAdmin } from "@/lib/adminAuth";
 
 const VALID_STATUSES = ["pending_payment", "paid", "preparing", "shipped", "delivered", "cancelled"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const { id } = await params;

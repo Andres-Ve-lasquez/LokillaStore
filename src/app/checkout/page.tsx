@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
 
 const REGIONES = [
@@ -16,7 +17,15 @@ function moneyCLP(n: number) {
 }
 
 export default function CheckoutPage() {
-  const { items, subtotal, clear } = useCart();
+  const {
+    items,
+    subtotal,
+    clear,
+    checkoutNotes,
+    setCheckoutNotes,
+    acceptedPolicies,
+    setAcceptedPolicies,
+  } = useCart();
 
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
 
@@ -24,7 +33,6 @@ export default function CheckoutPage() {
     nombre: "", email: "", telefono: "",
     region: REGIONES[6], ciudad: "", comuna: "", calle: "", numero: "", depto: "",
   });
-  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -78,6 +86,12 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!items.length) return;
+
+    if (!acceptedPolicies) {
+      setError("Debes aceptar las políticas de compra antes de continuar.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -101,7 +115,7 @@ export default function CheckoutPage() {
           shippingCost: shipping,
           discount,
           couponCode: appliedCoupon,
-          notes,
+          notes: checkoutNotes,
         }),
       });
 
@@ -209,9 +223,27 @@ export default function CheckoutPage() {
             <label className="font-bold text-slate-700">
               Notas del pedido <span className="text-xs font-normal text-slate-400">(opcional)</span>
             </label>
-            <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
+            <textarea rows={3} value={checkoutNotes} onChange={(e) => setCheckoutNotes(e.target.value)}
               placeholder="Ej: timbre roto, dejar con el conserje..."
               className="mt-2 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+          </section>
+
+          <section className="bg-white rounded-2xl border p-6">
+            <label className="flex items-start gap-3 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={acceptedPolicies}
+                onChange={(e) => setAcceptedPolicies(e.target.checked)}
+              />
+              <span>
+                Confirmo que leí los tiempos de producción, envíos, cambios y políticas del sitio.
+                {" "}
+                <Link href="/informativo#terminos" className="font-semibold text-[#3bb1e6] underline">
+                  Ver informativos
+                </Link>
+              </span>
+            </label>
           </section>
 
           {error && (

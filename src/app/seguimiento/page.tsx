@@ -79,7 +79,7 @@ function SeguimientoContent() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value.toUpperCase())}
-          placeholder="ej: ORD-20250403-1234"
+          placeholder="ej: ORD-20250403-A1B2C3"
           className="flex-1 border-2 rounded-xl px-4 py-3 font-mono text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
         />
         <button type="submit" disabled={loading}
@@ -222,4 +222,3 @@ export default function SeguimientoPage() {
     </Suspense>
   );
 }
-

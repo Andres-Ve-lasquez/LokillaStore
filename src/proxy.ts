@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_COOKIE, verifyAdminSessionToken } from "@/lib/adminAuth";
 
-const ADMIN_COOKIE = "admin_auth";
-const SESSION_TOKEN = "lokilla-admin-ok";
-
-export function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/gestion-lk-2024") && pathname !== "/gestion-lk-2024/login") {
     const token = req.cookies.get(ADMIN_COOKIE)?.value;
-    if (!token || token !== SESSION_TOKEN) {
+    const isValid = await verifyAdminSessionToken(token);
+
+    if (!isValid) {
       const loginUrl = req.nextUrl.clone();
       loginUrl.pathname = "/gestion-lk-2024/login";
       return NextResponse.redirect(loginUrl);

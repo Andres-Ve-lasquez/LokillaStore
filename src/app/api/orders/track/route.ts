@@ -4,8 +4,17 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
+import { applyRateLimit } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
+  const limited = applyRateLimit(req, {
+    key: "order-track",
+    max: 30,
+    windowMs: 10 * 60 * 1000,
+    message: "Demasiadas búsquedas. Espera un momento antes de intentar de nuevo.",
+  });
+  if (limited) return limited;
+
   const { searchParams } = new URL(req.url);
   const orderNumber = searchParams.get("order")?.trim().toUpperCase();
 

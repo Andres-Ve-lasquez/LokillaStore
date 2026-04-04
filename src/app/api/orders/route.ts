@@ -4,8 +4,12 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function GET(req: NextRequest) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const { searchParams } = new URL(req.url);

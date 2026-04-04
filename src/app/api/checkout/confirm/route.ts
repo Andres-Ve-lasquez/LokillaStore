@@ -6,17 +6,16 @@ import { WebpayPlus, Options, Environment, IntegrationCommerceCodes, Integration
 import dbConnect from "@/lib/dbConnect";
 import Order from "@/lib/models/Order";
 import Product from "@/lib/models/Product";
+import DiscountCode from "@/lib/models/DiscountCode";
 import { sendOrderConfirmation, sendNewOrderNotification } from "@/lib/mail";
 
-async function decrementStock(items: { productId: string; cantidad: number }[]) {
-  await Promise.all(
-    items.map((it) =>
-      Product.findByIdAndUpdate(it.productId, {
-        $inc: { stock: -it.cantidad },
-      })
-    )
-  );
-}
+type PaymentResult = {
+  amount: number;
+  authorization_code: string;
+  buy_order: string;
+  response_code: number;
+  transaction_date: string;
+};
 
 function getTx() {
   const isProduction = process.env.NODE_ENV === "production" && process.env.TBK_COMMERCE_CODE;
@@ -30,52 +29,110 @@ function getTx() {
   );
 }
 
-// WebPay redirige aquí con POST (token_ws en el body)
-export async function POST(req: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+function getBaseUrl(req: NextRequest) {
+  return (process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin).replace(/\/$/, "");
+}
+
+async function decrementStock(items: { productId: string; cantidad: number }[]) {
+  const requestedQtyByProduct = new Map<string, number>();
+  items.forEach((item) => {
+    requestedQtyByProduct.set(
+      item.productId,
+      (requestedQtyByProduct.get(item.productId) || 0) + item.cantidad
+    );
+  });
+
+  const productIds = [...requestedQtyByProduct.keys()];
+  const products = await Product.find({ _id: { $in: productIds } }).select({ stock: 1 }).lean();
+  const productsById = new Map(products.map((product) => [String(product._id), product]));
+
+  for (const [productId, quantity] of requestedQtyByProduct.entries()) {
+    const product = productsById.get(productId);
+    if (!product || product.stock < quantity) {
+      throw new Error(`Stock insuficiente para ${productId}`);
+    }
+  }
+
+  await Promise.all(
+    [...requestedQtyByProduct.entries()].map(([productId, quantity]) =>
+      Product.findByIdAndUpdate(productId, { $inc: { stock: -quantity } })
+    )
+  );
+}
+
+async function finalizePaidOrder(token: string, result: PaymentResult) {
+  const alreadyPaidOrder = await Order.findOne({ "payment.token": token, status: "paid" });
+  if (alreadyPaidOrder) {
+    return alreadyPaidOrder;
+  }
+
+  const order = await Order.findOneAndUpdate(
+    { "payment.token": token, status: { $ne: "paid" } },
+    {
+      status: "paid",
+      "payment.transactionId": result.buy_order || token,
+      "payment.authorizationCode": result.authorization_code,
+      "payment.amount": result.amount,
+      "payment.paidAt": new Date(),
+    },
+    { new: true }
+  );
+
+  if (!order) {
+    return Order.findOne({ "payment.token": token, status: "paid" });
+  }
 
   try {
-    const formData = await req.formData();
-    const token = formData.get("token_ws") as string;
+    await decrementStock(order.items);
+  } catch (stockErr) {
+    console.error("[stock]", stockErr);
+  }
 
-    if (!token) {
-      return NextResponse.redirect(`${baseUrl}/checkout/error?reason=no_token`);
+  if (order.couponCode) {
+    try {
+      await DiscountCode.findOneAndUpdate(
+        { code: order.couponCode, isActive: true },
+        { $inc: { usedCount: 1 } }
+      );
+    } catch (couponErr) {
+      console.error("[coupon]", couponErr);
+    }
+  }
+
+  try {
+    await Promise.all([
+      sendOrderConfirmation(order),
+      sendNewOrderNotification(order),
+    ]);
+  } catch (mailErr) {
+    console.error("[mail]", mailErr);
+  }
+
+  return order;
+}
+
+async function handleApprovedPayment(req: NextRequest, token: string) {
+  const baseUrl = getBaseUrl(req);
+
+  try {
+    await dbConnect();
+
+    const existingOrder = await Order.findOne({ "payment.token": token }).select({ status: 1, orderNumber: 1 });
+    if (existingOrder?.status === "paid") {
+      return NextResponse.redirect(`${baseUrl}/checkout/success?order=${existingOrder.orderNumber}`);
     }
 
-    await dbConnect();
     const tx = getTx();
     const result = await tx.commit(token);
 
-    // response_code 0 = aprobado
     if (result.response_code !== 0) {
       return NextResponse.redirect(`${baseUrl}/checkout/error?reason=rejected`);
     }
 
-    const order = await Order.findOneAndUpdate(
-      { "payment.token": token },
-      {
-        status: "paid",
-        "payment.transactionId": result.transaction_date,
-        "payment.authorizationCode": result.authorization_code,
-        "payment.amount": result.amount,
-        "payment.paidAt": new Date(),
-      },
-      { new: true }
-    );
+    const order = await finalizePaidOrder(token, result as PaymentResult);
 
     if (!order) {
       return NextResponse.redirect(`${baseUrl}/checkout/error?reason=order_not_found`);
-    }
-
-    try { await decrementStock(order.items); } catch (e) { console.error("[stock POST]", e); }
-
-    try {
-      await Promise.all([
-        sendOrderConfirmation(order),
-        sendNewOrderNotification(order),
-      ]);
-    } catch (mailErr) {
-      console.error("[mail]", mailErr);
     }
 
     return NextResponse.redirect(`${baseUrl}/checkout/success?order=${order.orderNumber}`);
@@ -85,9 +142,26 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// WebPay redirige via GET: con token_ws (pago ok) o TBK_TOKEN (cancelado)
+export async function POST(req: NextRequest) {
+  const baseUrl = getBaseUrl(req);
+
+  try {
+    const formData = await req.formData();
+    const token = formData.get("token_ws") as string;
+
+    if (!token) {
+      return NextResponse.redirect(`${baseUrl}/checkout/error?reason=no_token`);
+    }
+
+    return handleApprovedPayment(req, token);
+  } catch (e: any) {
+    console.error("[checkout/confirm POST]", e);
+    return NextResponse.redirect(`${baseUrl}/checkout/error?reason=server_error`);
+  }
+}
+
 export async function GET(req: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const baseUrl = getBaseUrl(req);
   const { searchParams } = new URL(req.url);
   const token = searchParams.get("token_ws");
   const tbkToken = searchParams.get("TBK_TOKEN");
@@ -100,45 +174,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/checkout/error?reason=no_token`);
   }
 
-  try {
-    await dbConnect();
-    const tx = getTx();
-    const result = await tx.commit(token);
-
-    if (result.response_code !== 0) {
-      return NextResponse.redirect(`${baseUrl}/checkout/error?reason=rejected`);
-    }
-
-    const order = await Order.findOneAndUpdate(
-      { "payment.token": token },
-      {
-        status: "paid",
-        "payment.transactionId": result.transaction_date,
-        "payment.authorizationCode": result.authorization_code,
-        "payment.amount": result.amount,
-        "payment.paidAt": new Date(),
-      },
-      { new: true }
-    );
-
-    if (!order) {
-      return NextResponse.redirect(`${baseUrl}/checkout/error?reason=order_not_found`);
-    }
-
-    try { await decrementStock(order.items); } catch (e) { console.error("[stock GET]", e); }
-
-    try {
-      await Promise.all([
-        sendOrderConfirmation(order),
-        sendNewOrderNotification(order),
-      ]);
-    } catch (mailErr) {
-      console.error("[mail]", mailErr);
-    }
-
-    return NextResponse.redirect(`${baseUrl}/checkout/success?order=${order.orderNumber}`);
-  } catch (e: any) {
-    console.error("[checkout/confirm GET]", e);
-    return NextResponse.redirect(`${baseUrl}/checkout/error?reason=server_error`);
-  }
+  return handleApprovedPayment(req, token);
 }

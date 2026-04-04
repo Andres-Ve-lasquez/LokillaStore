@@ -4,8 +4,12 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../lib/dbConnect";
 import DiscountCode from "../../../lib/models/DiscountCode";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function POST(req: NextRequest) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const data = await req.json();
@@ -37,7 +41,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const unauthorized = await requireAdmin(req);
+  if (unauthorized) return unauthorized;
+
   try {
     await dbConnect();
     const list = await DiscountCode.find({}).sort({ createdAt: -1 }).limit(100);

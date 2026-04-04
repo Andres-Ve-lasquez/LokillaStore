@@ -4,7 +4,18 @@ import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
 
 export default function CarritoPage() {
-  const { items, subtotal, setQty, removeItem, moneyCLP, FREE_SHIPPING_THRESHOLD } = useCart();
+  const {
+    items,
+    subtotal,
+    setQty,
+    removeItem,
+    checkoutNotes,
+    setCheckoutNotes,
+    acceptedPolicies,
+    setAcceptedPolicies,
+    moneyCLP,
+    FREE_SHIPPING_THRESHOLD,
+  } = useCart();
   const faltante = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const progreso = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
 
@@ -91,24 +102,35 @@ export default function CarritoPage() {
 
             <label className="mt-6 block text-sm font-medium">¿Algo para que tengamos en cuenta?</label>
             <textarea
+              value={checkoutNotes}
+              onChange={(e) => setCheckoutNotes(e.target.value)}
               className="mt-1 w-full rounded-xl border p-3"
               placeholder="Indicaciones para la entrega del pedido"
               rows={3}
             />
 
             <div className="mt-6 flex items-start gap-2">
-              <input id="acepto" type="checkbox" className="mt-1" />
+              <input
+                id="acepto"
+                type="checkbox"
+                className="mt-1"
+                checked={acceptedPolicies}
+                onChange={(e) => setAcceptedPolicies(e.target.checked)}
+              />
               <label htmlFor="acepto" className="text-sm text-neutral-600">
-                Acepto los tiempos de producción claramente especificados y la política de cambios del sitio.
+                Acepto los tiempos de producción y la política de cambios del sitio. Puedes revisarlos en{" "}
+                <Link href="/informativo#terminos" className="underline">
+                  Informativos
+                </Link>.
               </label>
             </div>
 
-            <a
+            <Link
               href="/checkout"
               className="mt-6 block w-full rounded-full py-4 text-center font-semibold bg-rose-600 text-white"
             >
               Finalizar pedido
-            </a>
+            </Link>
 
             <Link href="/catalogo" className="mt-3 block text-center underline">
               Seguir comprando
