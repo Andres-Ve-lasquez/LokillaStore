@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
@@ -127,7 +127,7 @@ function ProductCard({ p, onAdd }: { p: Product; onAdd: () => void }) {
 }
 
 /* ===== Página ===== */
-export default function CatalogoPage() {
+function CatalogoInner() {
   const searchParams = useSearchParams();
   const [productos, setProductos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -311,5 +311,13 @@ export default function CatalogoPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function CatalogoPage() {
+  return (
+    <Suspense fallback={null}>
+      <CatalogoInner />
+    </Suspense>
   );
 }
