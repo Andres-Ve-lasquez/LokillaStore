@@ -66,8 +66,8 @@ function OrdersSection() {
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-[#1a4876]">Órdenes de Venta</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="text-xl font-bold text-[#1a4876]">Órdenes de Venta</h2>
         <div className="flex gap-2">
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
             className="text-sm border rounded-lg px-3 py-1.5">
@@ -455,10 +455,10 @@ export default function AdminPage() {
                 <input name="sku" placeholder="SKU (opcional)" value={form.sku || ""} onChange={handleChange} className="p-2 rounded-lg border" />
               </div>
               <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="p-2 rounded-lg border" required />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <input name="precio" placeholder="Precio" type="number" value={form.precio} onChange={handleChange} className="p-2 rounded-lg border" required />
                 <input name="stock" placeholder="Stock" type="number" value={form.stock} onChange={handleChange} className="p-2 rounded-lg border" required />
-                <input name="minStock" placeholder="Stock mínimo" type="number" value={form.minStock} onChange={handleChange} className="p-2 rounded-lg border" required />
+                <input name="minStock" placeholder="Stock mínimo" type="number" value={form.minStock} onChange={handleChange} className="p-2 rounded-lg border col-span-2 sm:col-span-1" required />
               </div>
               <div className="grid md:grid-cols-2 gap-3">
                 <select name="coleccion" value={form.coleccion} onChange={handleChange} className="p-2 rounded-lg border" required>
@@ -531,8 +531,8 @@ export default function AdminPage() {
         <div className="space-y-6">
           <section className="bg-white rounded-2xl border p-6">
             <h2 className="text-lg font-bold text-[#1a4876] mb-4">🎟️ Crear cupón</h2>
-            <form onSubmit={createCoupon} className="grid gap-3 md:grid-cols-2">
-              <input name="code" placeholder="Código (ej. INVIERNO10)" value={couponForm.code} onChange={handleCouponChange} className="p-2 rounded-lg border" required />
+            <form onSubmit={createCoupon} className="flex flex-col gap-3">
+              <input name="code" placeholder="Código (ej. INVIERNO10)" value={couponForm.code} onChange={handleCouponChange} className="p-2 rounded-lg border w-full" required />
               <div className="grid grid-cols-2 gap-3">
                 <select name="type" value={couponForm.type} onChange={handleCouponChange} className="p-2 rounded-lg border">
                   <option value="percentage">% Porcentaje</option>
@@ -540,42 +540,46 @@ export default function AdminPage() {
                 </select>
                 <input name="value" type="number" placeholder="Valor" value={couponForm.value} onChange={handleCouponChange} className="p-2 rounded-lg border" required />
               </div>
-              <select name="appliesTo" value={couponForm.appliesTo} onChange={handleCouponChange} className="p-2 rounded-lg border">
+              <select name="appliesTo" value={couponForm.appliesTo} onChange={handleCouponChange} className="p-2 rounded-lg border w-full">
                 <option value="order">Pedido completo</option>
                 <option value="coleccion">Colección</option>
                 <option value="product">Producto(s) específico(s)</option>
               </select>
-              <input name="minOrderAmount" type="number" placeholder="Mínimo de compra (opcional)" value={couponForm.minOrderAmount} onChange={handleCouponChange} className="p-2 rounded-lg border" />
+              <input name="minOrderAmount" type="number" placeholder="Mínimo de compra (opcional)" value={couponForm.minOrderAmount} onChange={handleCouponChange} className="p-2 rounded-lg border w-full" />
               {couponForm.appliesTo === "product" && (
-                <input name="productIds" placeholder="IDs de producto separados por coma" value={couponForm.productIds} onChange={handleCouponChange} className="p-2 rounded-lg border col-span-2" />
+                <input name="productIds" placeholder="IDs de producto separados por coma" value={couponForm.productIds} onChange={handleCouponChange} className="p-2 rounded-lg border w-full" />
               )}
               {couponForm.appliesTo === "coleccion" && (
-                <input name="colecciones" placeholder="Colecciones (coma): Poleras, Tazas" value={couponForm.colecciones} onChange={handleCouponChange} className="p-2 rounded-lg border col-span-2" />
+                <input name="colecciones" placeholder="Colecciones (coma): Poleras, Tazas" value={couponForm.colecciones} onChange={handleCouponChange} className="p-2 rounded-lg border w-full" />
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input name="startAt" type="datetime-local" value={couponForm.startAt} onChange={handleCouponChange} className="p-2 rounded-lg border" />
                 <input name="endAt" type="datetime-local" value={couponForm.endAt} onChange={handleCouponChange} className="p-2 rounded-lg border" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input name="usageLimit" type="number" placeholder="Límite de usos (opcional)" value={couponForm.usageLimit} onChange={handleCouponChange} className="p-2 rounded-lg border" />
-                <label className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-4">
+                <input name="usageLimit" type="number" placeholder="Límite de usos (opcional)" value={couponForm.usageLimit} onChange={handleCouponChange} className="p-2 rounded-lg border flex-1" />
+                <label className="flex items-center gap-2 text-sm whitespace-nowrap">
                   <input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={handleCouponChange} />
                   Activo
                 </label>
               </div>
-              <button className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2.5 rounded-xl font-bold col-span-2 transition">Crear cupón</button>
+              <button className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2.5 rounded-xl font-bold transition">Crear cupón</button>
             </form>
             {couponMsg && <p className="mt-3 text-emerald-600 font-semibold">{couponMsg}</p>}
           </section>
 
           <section className="bg-white rounded-2xl border p-6">
             <h2 className="text-lg font-bold text-[#1a4876] mb-4">🧪 Probar cupón</h2>
-            <form onSubmit={testCoupon} className="grid md:grid-cols-4 gap-3">
-              <input placeholder="Código" value={test.code} onChange={(e) => setTest({ ...test, code: e.target.value })} className="p-2 rounded-lg border" required />
-              <input placeholder="Monto total" type="number" value={test.amount} onChange={(e) => setTest({ ...test, amount: e.target.value })} className="p-2 rounded-lg border" required />
-              <input placeholder="productId (opcional)" value={test.productId} onChange={(e) => setTest({ ...test, productId: e.target.value })} className="p-2 rounded-lg border" />
-              <input placeholder="Colección (opcional)" value={test.coleccion} onChange={(e) => setTest({ ...test, coleccion: e.target.value })} className="p-2 rounded-lg border" />
-              <button className="bg-slate-800 text-white py-2.5 rounded-xl font-bold md:col-span-4 transition hover:bg-slate-700">Probar</button>
+            <form onSubmit={testCoupon} className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <input placeholder="Código" value={test.code} onChange={(e) => setTest({ ...test, code: e.target.value })} className="p-2 rounded-lg border" required />
+                <input placeholder="Monto total" type="number" value={test.amount} onChange={(e) => setTest({ ...test, amount: e.target.value })} className="p-2 rounded-lg border" required />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input placeholder="productId (opcional)" value={test.productId} onChange={(e) => setTest({ ...test, productId: e.target.value })} className="p-2 rounded-lg border" />
+                <input placeholder="Colección (opcional)" value={test.coleccion} onChange={(e) => setTest({ ...test, coleccion: e.target.value })} className="p-2 rounded-lg border" />
+              </div>
+              <button className="bg-slate-800 text-white py-2.5 rounded-xl font-bold transition hover:bg-slate-700">Probar</button>
             </form>
             {testResult && (
               <div className="mt-3 p-3 bg-slate-50 rounded-xl text-sm font-medium text-slate-700">{testResult}</div>
