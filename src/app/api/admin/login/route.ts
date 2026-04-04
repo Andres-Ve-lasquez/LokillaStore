@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_COOKIE = "admin_auth";
+const SESSION_TOKEN = "lokilla-admin-ok";
 const IS_PROD = process.env.NODE_ENV === "production";
 
 export async function POST(req: NextRequest) {
@@ -13,11 +14,11 @@ export async function POST(req: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(ADMIN_COOKIE, password, {
+  res.cookies.set(ADMIN_COOKIE, SESSION_TOKEN, {
     httpOnly: true,
     secure: IS_PROD,
     sameSite: "lax",
-    maxAge: 60 * 60 * 8, // 8 horas
+    maxAge: 60 * 60 * 8,
     path: "/",
   });
   return res;

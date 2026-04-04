@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import CartIcon from "@/components/cart/CartIcon";
-import { FaInstagram, FaTiktok, FaSearch, FaUser } from "react-icons/fa";
+import { FaInstagram, FaTiktok, FaSearch, FaUser, FaBars, FaTimes } from "react-icons/fa";
 
 const EXTRA_GAP = 12; // px de respiración bajo el nav fijo
 
 export default function Navbar() {
   const [compact, setCompact] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Refs para medir alturas y calcular offset
   const topBarRef = useRef<HTMLDivElement | null>(null);
@@ -118,8 +119,8 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Menú centrado */}
-            <ul className="flex-1 flex justify-center gap-8 md:gap-12 text-white font-semibold text-base md:text-lg">
+            {/* Menú centrado — solo desktop */}
+            <ul className="hidden md:flex flex-1 justify-center gap-8 md:gap-12 text-white font-semibold text-base md:text-lg">
               <li><Link href="/inicio" className="hover:text-[#cbb4d4] transition">INICIO</Link></li>
               <li><Link href="/colecciones" className="hover:text-[#cbb4d4] transition">COLECCIONES</Link></li>
               <li><Link href="/informativo" className="hover:text-[#cbb4d4] transition">INFORMATIVOS</Link></li>
@@ -127,16 +128,41 @@ export default function Navbar() {
             </ul>
 
             {/* Iconos derecha */}
-            <div className="flex gap-6 items-center text-white text-2xl">
-              <Link href="/buscar" aria-label="Buscar">
+            <div className="flex gap-4 md:gap-6 items-center text-white text-2xl">
+              <Link href="/buscar" aria-label="Buscar" className="hidden md:block">
                 <FaSearch className="hover:text-[#cbb4d4] transition cursor-pointer" />
               </Link>
-              <Link href="/usuario" aria-label="Usuario">
+              <Link href="/usuario" aria-label="Usuario" className="hidden md:block">
                 <FaUser className="hover:text-[#cbb4d4] transition cursor-pointer" />
               </Link>
               <CartIcon />
+              {/* Hamburguesa — solo mobile */}
+              <button onClick={() => setMenuOpen((v) => !v)} className="md:hidden text-white" aria-label="Menú">
+                {menuOpen ? <FaTimes size={22} /> : <FaBars size={22} />}
+              </button>
             </div>
           </div>
+          {/* Menú mobile desplegable */}
+          {menuOpen && (
+            <div className="md:hidden border-t border-white/20 px-4 pb-4 pt-2">
+              <ul className="flex flex-col gap-1 text-white font-semibold text-lg">
+                {[
+                  { href: "/inicio", label: "Inicio" },
+                  { href: "/colecciones", label: "Colecciones" },
+                  { href: "/catalogo", label: "Ver tienda" },
+                  { href: "/informativo", label: "Informativos" },
+                  { href: "/seguimiento", label: "📬 Rastrear pedido" },
+                ].map(({ href, label }) => (
+                  <li key={href}>
+                    <Link href={href} onClick={() => setMenuOpen(false)}
+                      className="block py-2.5 px-3 rounded-xl hover:bg-white/20 transition">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </nav>
       </div>
 

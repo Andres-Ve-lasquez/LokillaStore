@@ -383,207 +383,209 @@ export default function AdminPage() {
 
   const lowStockCount = useMemo(() => lowStock.length, [lowStock]);
 
+  const TABS = [
+    { key: "productos", label: "📦 Productos", badge: lowStockCount > 0 ? lowStockCount : null },
+    { key: "cupones",   label: "🎟️ Cupones",   badge: null },
+    { key: "ordenes",   label: "🛒 Órdenes",   badge: null },
+  ];
+  const [tab, setTab] = useState("productos");
+
   return (
-    <div className="max-w-5xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-xl space-y-10">
-      <div className="flex items-center justify-between border-b pb-4">
-        <h1 className="text-xl font-extrabold text-[#1a4876]">Panel Administrador</h1>
+    <div className="max-w-5xl mx-auto mt-6 px-4 pb-16">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#32e1c0] to-[#a572e1] flex items-center justify-center text-white font-bold text-lg">L</div>
+          <h1 className="text-xl font-extrabold text-[#1a4876]">Panel Admin</h1>
+        </div>
         <button
-          onClick={async () => {
-            await fetch("/api/admin/login", { method: "DELETE" });
-            window.location.href = "/admin/login";
-          }}
+          onClick={async () => { await fetch("/api/admin/login", { method: "DELETE" }); window.location.href = "/admin/login"; }}
           className="text-sm px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium"
         >
           Cerrar sesión
         </button>
       </div>
 
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-[#1a4876]">Alertas de Stock</h2>
-          <button onClick={fetchLowStock} className="text-sm px-3 py-1 rounded bg-slate-100 hover:bg-slate-200">Actualizar</button>
-        </div>
-        <div className="mt-3">
-          {loadingLow ? (
-            <p className="text-slate-500">Cargando...</p>
-          ) : lowStockCount === 0 ? (
-            <div className="p-3 bg-emerald-50 text-emerald-700 rounded">Todo OK: sin productos bajo el umbral.</div>
-          ) : (
-            <div>
-              <div className="p-3 rounded bg-amber-50 text-amber-800 mb-3">{lowStockCount} producto(s) con stock bajo.</div>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-xl mb-8">
+        {TABS.map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2
+              ${tab === t.key ? "bg-white shadow text-[#1a4876]" : "text-slate-500 hover:text-slate-700"}`}>
+            {t.label}
+            {t.badge ? <span className="bg-amber-400 text-white text-xs rounded-full px-1.5 py-0.5">{t.badge}</span> : null}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab: Productos */}
+      {tab === "productos" && (
+        <div className="space-y-8">
+          {/* Alertas stock */}
+          {lowStockCount > 0 && (
+            <section className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-amber-800">⚠️ Stock bajo ({lowStockCount})</h2>
+                <button onClick={fetchLowStock} className="text-xs px-3 py-1 rounded-lg bg-white border hover:bg-slate-50">Actualizar</button>
+              </div>
               <div className="grid md:grid-cols-2 gap-3">
                 {lowStock.map((p: any) => (
-                  <div key={p._id} className="p-3 border rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold">{p.nombre}</p>
-                        <p className="text-sm text-slate-500">Colección: {p.coleccion}</p>
-                        <p className="text-sm">Stock: <span className="font-bold">{p.stock}</span> / min {p.minStock}</p>
-                      </div>
-                      {p.imagenUrl ? (<img src={p.imagenUrl} className="w-16 h-16 object-contain rounded" alt={p.nombre} />) : null}
+                  <div key={p._id} className="bg-white p-3 border rounded-xl flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-sm">{p.nombre}</p>
+                      <p className="text-xs text-slate-500">{p.coleccion}</p>
+                      <p className="text-xs mt-1">Stock: <span className="font-bold text-red-500">{p.stock}</span> / min {p.minStock}</p>
                     </div>
+                    {p.imagenUrl && <img src={p.imagenUrl} className="w-12 h-12 object-contain rounded-lg" alt={p.nombre} />}
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Formulario agregar/editar */}
+          <section className="bg-white rounded-2xl border p-6" id="product-form">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-[#1a4876]">{editingId ? "✏️ Editar Producto" : "➕ Agregar Producto"}</h2>
+              {editingId && <button onClick={resetProductForm} className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">Cancelar</button>}
             </div>
-          )}
+            <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
+              <div className="grid md:grid-cols-2 gap-3">
+                <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} className="p-2 rounded-lg border" required />
+                <input name="sku" placeholder="SKU (opcional)" value={form.sku || ""} onChange={handleChange} className="p-2 rounded-lg border" />
+              </div>
+              <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="p-2 rounded-lg border" required />
+              <div className="grid grid-cols-3 gap-3">
+                <input name="precio" placeholder="Precio" type="number" value={form.precio} onChange={handleChange} className="p-2 rounded-lg border" required />
+                <input name="stock" placeholder="Stock" type="number" value={form.stock} onChange={handleChange} className="p-2 rounded-lg border" required />
+                <input name="minStock" placeholder="Stock mínimo" type="number" value={form.minStock} onChange={handleChange} className="p-2 rounded-lg border" required />
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <select name="coleccion" value={form.coleccion} onChange={handleChange} className="p-2 rounded-lg border" required>
+                  {COLECCIONES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input type="file" accept="image/png,image/jpeg" onChange={handleImage} className="p-2 rounded-lg border" />
+              </div>
+              {preview && <img src={preview} alt="Preview" className="w-32 h-32 object-contain rounded-xl mx-auto border" />}
+              <button type="submit" className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2.5 rounded-xl font-bold transition">
+                {editingId ? "Guardar cambios" : "Agregar producto"}
+              </button>
+            </form>
+            {mensaje && <p className="mt-3 text-emerald-600 font-semibold">{mensaje}</p>}
+          </section>
+
+          {/* Lista productos */}
+          <section className="bg-white rounded-2xl border">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h2 className="font-bold text-[#1a4876]">Todos los productos ({allProducts.length})</h2>
+              <button onClick={fetchProducts} className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">Actualizar</button>
+            </div>
+            {loadingProducts ? (
+              <p className="text-slate-500 p-5">Cargando...</p>
+            ) : allProducts.length === 0 ? (
+              <p className="text-slate-400 text-center py-10">Sin productos aún.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Producto</th>
+                      <th className="px-4 py-3 text-left hidden md:table-cell">Colección</th>
+                      <th className="px-4 py-3 text-right">Precio</th>
+                      <th className="px-4 py-3 text-center">Stock</th>
+                      <th className="px-4 py-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y bg-white">
+                    {allProducts.map((p) => (
+                      <tr key={p._id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            {p.imagenUrl ? <img src={p.imagenUrl} className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0" alt={p.nombre} /> : <div className="w-10 h-10 rounded-lg bg-slate-200 flex-shrink-0" />}
+                            <span className="font-medium truncate max-w-[140px]">{p.nombre}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{p.coleccion}</td>
+                        <td className="px-4 py-3 text-right font-semibold">{Number(p.precio).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`font-bold ${Number(p.stock) <= Number(p.minStock) ? "text-red-500" : "text-emerald-600"}`}>{p.stock}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button onClick={() => startEdit(p)} className="px-3 py-1 text-xs rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium">Editar</button>
+                            <button onClick={() => p._id && deleteProduct(p._id, p.nombre)} className="px-3 py-1 text-xs rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium">Eliminar</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
-      </section>
+      )}
 
-      <section id="product-form">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-[#1a4876]">
-            {editingId ? "Editar Producto" : "Agregar Producto"}
-          </h2>
-          {editingId && (
-            <button onClick={resetProductForm} className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">
-              Cancelar edición
-            </button>
-          )}
+      {/* Tab: Cupones */}
+      {tab === "cupones" && (
+        <div className="space-y-6">
+          <section className="bg-white rounded-2xl border p-6">
+            <h2 className="text-lg font-bold text-[#1a4876] mb-4">🎟️ Crear cupón</h2>
+            <form onSubmit={createCoupon} className="grid gap-3 md:grid-cols-2">
+              <input name="code" placeholder="Código (ej. INVIERNO10)" value={couponForm.code} onChange={handleCouponChange} className="p-2 rounded-lg border" required />
+              <div className="grid grid-cols-2 gap-3">
+                <select name="type" value={couponForm.type} onChange={handleCouponChange} className="p-2 rounded-lg border">
+                  <option value="percentage">% Porcentaje</option>
+                  <option value="fixed">$ Fijo</option>
+                </select>
+                <input name="value" type="number" placeholder="Valor" value={couponForm.value} onChange={handleCouponChange} className="p-2 rounded-lg border" required />
+              </div>
+              <select name="appliesTo" value={couponForm.appliesTo} onChange={handleCouponChange} className="p-2 rounded-lg border">
+                <option value="order">Pedido completo</option>
+                <option value="coleccion">Colección</option>
+                <option value="product">Producto(s) específico(s)</option>
+              </select>
+              <input name="minOrderAmount" type="number" placeholder="Mínimo de compra (opcional)" value={couponForm.minOrderAmount} onChange={handleCouponChange} className="p-2 rounded-lg border" />
+              {couponForm.appliesTo === "product" && (
+                <input name="productIds" placeholder="IDs de producto separados por coma" value={couponForm.productIds} onChange={handleCouponChange} className="p-2 rounded-lg border col-span-2" />
+              )}
+              {couponForm.appliesTo === "coleccion" && (
+                <input name="colecciones" placeholder="Colecciones (coma): Poleras, Tazas" value={couponForm.colecciones} onChange={handleCouponChange} className="p-2 rounded-lg border col-span-2" />
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <input name="startAt" type="datetime-local" value={couponForm.startAt} onChange={handleCouponChange} className="p-2 rounded-lg border" />
+                <input name="endAt" type="datetime-local" value={couponForm.endAt} onChange={handleCouponChange} className="p-2 rounded-lg border" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input name="usageLimit" type="number" placeholder="Límite de usos (opcional)" value={couponForm.usageLimit} onChange={handleCouponChange} className="p-2 rounded-lg border" />
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={handleCouponChange} />
+                  Activo
+                </label>
+              </div>
+              <button className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2.5 rounded-xl font-bold col-span-2 transition">Crear cupón</button>
+            </form>
+            {couponMsg && <p className="mt-3 text-emerald-600 font-semibold">{couponMsg}</p>}
+          </section>
+
+          <section className="bg-white rounded-2xl border p-6">
+            <h2 className="text-lg font-bold text-[#1a4876] mb-4">🧪 Probar cupón</h2>
+            <form onSubmit={testCoupon} className="grid md:grid-cols-4 gap-3">
+              <input placeholder="Código" value={test.code} onChange={(e) => setTest({ ...test, code: e.target.value })} className="p-2 rounded-lg border" required />
+              <input placeholder="Monto total" type="number" value={test.amount} onChange={(e) => setTest({ ...test, amount: e.target.value })} className="p-2 rounded-lg border" required />
+              <input placeholder="productId (opcional)" value={test.productId} onChange={(e) => setTest({ ...test, productId: e.target.value })} className="p-2 rounded-lg border" />
+              <input placeholder="Colección (opcional)" value={test.coleccion} onChange={(e) => setTest({ ...test, coleccion: e.target.value })} className="p-2 rounded-lg border" />
+              <button className="bg-slate-800 text-white py-2.5 rounded-xl font-bold md:col-span-4 transition hover:bg-slate-700">Probar</button>
+            </form>
+            {testResult && (
+              <div className="mt-3 p-3 bg-slate-50 rounded-xl text-sm font-medium text-slate-700">{testResult}</div>
+            )}
+          </section>
         </div>
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-          <div className="grid md:grid-cols-2 gap-3">
-            <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} className="p-2 rounded border" required />
-            <input name="sku" placeholder="SKU (opcional)" value={form.sku || ""} onChange={handleChange} className="p-2 rounded border" />
-          </div>
-          <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="p-2 rounded border" required />
-          <div className="grid md:grid-cols-3 gap-3">
-            <input name="precio" placeholder="Precio" type="number" value={form.precio} onChange={handleChange} className="p-2 rounded border" required />
-            <input name="stock" placeholder="Stock" type="number" value={form.stock} onChange={handleChange} className="p-2 rounded border" required />
-            <input name="minStock" placeholder="Umbral Bajo Stock" type="number" value={form.minStock} onChange={handleChange} className="p-2 rounded border" required />
-          </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            <select name="coleccion" value={form.coleccion} onChange={handleChange} className="p-2 rounded border" required>
-              {COLECCIONES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <input type="file" accept="image/png,image/jpeg" onChange={handleImage} className="p-2 rounded border" />
-          </div>
-          {preview && <img src={preview} alt="Preview" className="w-40 h-40 object-contain rounded-lg mx-auto" />}
-          <button type="submit" className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2 rounded font-bold">
-            {editingId ? "Guardar cambios" : "Agregar producto"}
-          </button>
-        </form>
-        {mensaje && <p className="mt-3 text-[#32e1c0] font-semibold">{mensaje}</p>}
-      </section>
+      )}
 
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-[#1a4876]">Todos los Productos</h2>
-          <button onClick={fetchProducts} className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">Actualizar</button>
-        </div>
-        {loadingProducts ? (
-          <p className="text-slate-500">Cargando...</p>
-        ) : allProducts.length === 0 ? (
-          <p className="text-slate-400 text-center py-8">Sin productos aún.</p>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="px-4 py-3 text-left">Producto</th>
-                  <th className="px-4 py-3 text-left">Colección</th>
-                  <th className="px-4 py-3 text-right">Precio</th>
-                  <th className="px-4 py-3 text-center">Stock</th>
-                  <th className="px-4 py-3 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y bg-white">
-                {allProducts.map((p) => (
-                  <tr key={p._id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 flex items-center gap-3">
-                      {p.imagenUrl
-                        ? <img src={p.imagenUrl} className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0" alt={p.nombre} />
-                        : <div className="w-10 h-10 rounded-lg bg-slate-200 flex-shrink-0" />
-                      }
-                      <span className="font-medium">{p.nombre}</span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">{p.coleccion}</td>
-                    <td className="px-4 py-3 text-right font-semibold">
-                      {Number(p.precio).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`font-bold ${p.stock <= p.minStock ? "text-red-500" : "text-emerald-600"}`}>{p.stock}</span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex justify-center gap-2">
-                        <button onClick={() => startEdit(p)}
-                          className="px-3 py-1 text-xs rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium">
-                          Editar
-                        </button>
-                        <button onClick={() => p._id && deleteProduct(p._id, p.nombre)}
-                          className="px-3 py-1 text-xs rounded-lg bg-red-50 text-red-700 hover:bg-red-100 font-medium">
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-bold mb-4 text-[#1a4876]">Cupones de Descuento</h2>
-
-        <form onSubmit={createCoupon} className="grid gap-3 md:grid-cols-2">
-          <input name="code" placeholder="Código (ej. INVIERNO10)" value={couponForm.code} onChange={handleCouponChange} className="p-2 rounded border" required />
-          <div className="grid grid-cols-2 gap-3">
-            <select name="type" value={couponForm.type} onChange={handleCouponChange} className="p-2 rounded border">
-              <option value="percentage">% Porcentaje</option>
-              <option value="fixed">$ Fijo</option>
-            </select>
-            <input name="value" type="number" placeholder="Valor" value={couponForm.value} onChange={handleCouponChange} className="p-2 rounded border" required />
-          </div>
-
-          <select name="appliesTo" value={couponForm.appliesTo} onChange={handleCouponChange} className="p-2 rounded border">
-            <option value="order">Pedido completo</option>
-            <option value="coleccion">Colección</option>
-            <option value="product">Producto(s) específico(s)</option>
-          </select>
-
-          <input name="minOrderAmount" type="number" placeholder="Mínimo de compra (opcional)" value={couponForm.minOrderAmount} onChange={handleCouponChange} className="p-2 rounded border" />
-
-          {couponForm.appliesTo === "product" && (
-            <input name="productIds" placeholder="IDs de producto separados por coma" value={couponForm.productIds} onChange={handleCouponChange} className="p-2 rounded border col-span-2" />
-          )}
-          {couponForm.appliesTo === "coleccion" && (
-            <input name="colecciones" placeholder="Colecciones (coma): Poleras, Tazas" value={couponForm.colecciones} onChange={handleCouponChange} className="p-2 rounded border col-span-2" />
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <input name="startAt" type="datetime-local" value={couponForm.startAt} onChange={handleCouponChange} className="p-2 rounded border" />
-            <input name="endAt" type="datetime-local" value={couponForm.endAt} onChange={handleCouponChange} className="p-2 rounded border" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <input name="usageLimit" type="number" placeholder="Límite de usos (opcional)" value={couponForm.usageLimit} onChange={handleCouponChange} className="p-2 rounded border" />
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={handleCouponChange} />
-              Activo
-            </label>
-          </div>
-
-          <button className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2 rounded font-bold col-span-2">Crear cupón</button>
-        </form>
-
-        {couponMsg && <p className="mt-3 text-[#32e1c0] font-semibold">{couponMsg}</p>}
-
-        <div className="mt-6">
-          <h3 className="font-semibold mb-2">Probar cupón</h3>
-          <form onSubmit={testCoupon} className="grid md:grid-cols-4 gap-3">
-            <input placeholder="Código" value={test.code} onChange={(e) => setTest({ ...test, code: e.target.value })} className="p-2 rounded border" required />
-            <input placeholder="Monto (producto o pedido)" type="number" value={test.amount} onChange={(e) => setTest({ ...test, amount: e.target.value })} className="p-2 rounded border" required />
-            <input placeholder="productId (opcional)" value={test.productId} onChange={(e) => setTest({ ...test, productId: e.target.value })} className="p-2 rounded border" />
-            <input placeholder="colección (opcional)" value={test.coleccion} onChange={(e) => setTest({ ...test, coleccion: e.target.value })} className="p-2 rounded border" />
-            <button className="bg-slate-800 text-white py-2 rounded font-bold md:col-span-4">Probar</button>
-          </form>
-          {testResult && <p className="mt-3 text-slate-700">{testResult}</p>}
-        </div>
-      </section>
-
-      <OrdersSection />
+      {/* Tab: Órdenes */}
+      {tab === "ordenes" && <OrdersSection />}
     </div>
   );
 }
