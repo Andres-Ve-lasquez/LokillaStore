@@ -2,6 +2,8 @@ import { Schema, model, models } from "mongoose";
 
 const VariantSchema = new Schema(
   {
+    talla: { type: String, trim: true, default: "" },
+    color: { type: String, trim: true, default: "" },
     name: { type: String, trim: true },   // ej: "Talla" o "Color"
     value: { type: String, trim: true },  // ej: "M" o "Rojo"
     stock: { type: Number, default: 0, min: 0 },

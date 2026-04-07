@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { getProductStock, normalizeProductVariants } from "@/lib/productVariants";
 
 const COLECCIONES = ["Poleras","Relojes","Calcetines","Billeteras","Zapatillas","Cortavientos","Totebag","Tazas"];
 
@@ -214,10 +215,29 @@ type Product = {
   minStock: number | string;
   coleccion: string;
   sku?: string;
+  variants: ProductVariantInput[];
+};
+
+type ProductVariantInput = {
+  talla: string;
+  color: string;
+  stock: number | string;
+  sku: string;
 };
 
 export default function AdminContent() {
-  const EMPTY_FORM: Product = { nombre: "", descripcion: "", precio: "", imagenUrl: "", stock: "", minStock: 5, coleccion: COLECCIONES[0], sku: "" };
+  const EMPTY_VARIANT: ProductVariantInput = { talla: "", color: "", stock: "", sku: "" };
+  const EMPTY_FORM: Product = {
+    nombre: "",
+    descripcion: "",
+    precio: "",
+    imagenUrl: "",
+    stock: "",
+    minStock: 5,
+    coleccion: COLECCIONES[0],
+    sku: "",
+    variants: [],
+  };
   const [form, setForm] = useState<Product>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState("");
@@ -246,8 +266,26 @@ export default function AdminContent() {
 
   const [test, setTest] = useState({ code: "", amount: "", productId: "", coleccion: "" });
   const [testResult, setTestResult] = useState<string>("");
+  const cleanedVariants = useMemo(() => normalizeProductVariants(form.variants), [form.variants]);
+  const usesVariants = cleanedVariants.length > 0;
+  const variantStockTotal = useMemo(() => getProductStock(cleanedVariants, form.stock), [cleanedVariants, form.stock]);
 
   const handleChange = (e: any) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleVariantChange = (index: number, field: keyof ProductVariantInput, value: string) => {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, [field]: value } : variant
+      ),
+    }));
+  };
+  const addVariant = () => setForm((current) => ({ ...current, variants: [...current.variants, { ...EMPTY_VARIANT }] }));
+  const removeVariant = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
+    }));
+  };
 
   const handleImage = (e: any) => {
     const file = e.target.files?.[0];
@@ -267,7 +305,22 @@ export default function AdminContent() {
   const resetProductForm = () => { setForm(EMPTY_FORM); setEditingId(null); setPreview(null); };
 
   const startEdit = (p: Product) => {
-    setForm({ nombre: p.nombre, descripcion: p.descripcion, precio: p.precio, imagenUrl: p.imagenUrl, stock: p.stock, minStock: p.minStock, coleccion: p.coleccion, sku: p.sku ?? "" });
+    setForm({
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      precio: p.precio,
+      imagenUrl: p.imagenUrl,
+      stock: p.stock,
+      minStock: p.minStock,
+      coleccion: p.coleccion,
+      sku: p.sku ?? "",
+      variants: normalizeProductVariants(p.variants).map((variant) => ({
+        talla: variant.talla,
+        color: variant.color,
+        stock: variant.stock,
+        sku: variant.sku,
+      })),
+    });
     setEditingId(p._id!);
     setPreview(p.imagenUrl || null);
     window.scrollTo({ top: document.getElementById("product-form")?.offsetTop ?? 0, behavior: "smooth" });
@@ -284,7 +337,14 @@ export default function AdminContent() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setMensaje("");
-    const payload = { ...form, precio: Number(form.precio), stock: Number(form.stock), minStock: Number(form.minStock || 5) };
+    const variants = normalizeProductVariants(form.variants);
+    const payload = {
+      ...form,
+      precio: Number(form.precio),
+      stock: variants.length ? getProductStock(variants, form.stock) : Number(form.stock),
+      minStock: Number(form.minStock || 5),
+      variants,
+    };
     try {
       const res = await fetch(editingId ? `/api/products/${editingId}` : "/api/products", {
         method: editingId ? "PUT" : "POST",
@@ -457,7 +517,16 @@ export default function AdminContent() {
               <textarea name="descripcion" placeholder="Descripción" value={form.descripcion} onChange={handleChange} className="p-2 rounded-lg border" required />
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <input name="precio" placeholder="Precio" type="number" value={form.precio} onChange={handleChange} className="p-2 rounded-lg border" required />
-                <input name="stock" placeholder="Stock" type="number" value={form.stock} onChange={handleChange} className="p-2 rounded-lg border" required />
+                <input
+                  name="stock"
+                  placeholder="Stock"
+                  type="number"
+                  value={usesVariants ? variantStockTotal : form.stock}
+                  onChange={handleChange}
+                  className={`p-2 rounded-lg border ${usesVariants ? "bg-slate-50 text-slate-500" : ""}`}
+                  required
+                  disabled={usesVariants}
+                />
                 <input name="minStock" placeholder="Stock mínimo" type="number" value={form.minStock} onChange={handleChange} className="p-2 rounded-lg border col-span-2 sm:col-span-1" required />
               </div>
               <div className="grid md:grid-cols-2 gap-3">
@@ -465,6 +534,67 @@ export default function AdminContent() {
                   {COLECCIONES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
                 <input type="file" accept="image/png,image/jpeg" onChange={handleImage} className="p-2 rounded-lg border" />
+              </div>
+              <div className="rounded-xl border p-4 bg-slate-50/70">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-semibold text-[#1a4876]">Variantes (opcional)</p>
+                    <p className="text-xs text-slate-500">
+                      Agrega combinaciones de talla y color. Si existen variantes, el stock total se calcula automaticamente.
+                    </p>
+                  </div>
+                  <button type="button" onClick={addVariant} className="text-sm px-3 py-1.5 rounded-lg bg-white border hover:bg-slate-50">
+                    Agregar variante
+                  </button>
+                </div>
+
+                {form.variants.length === 0 ? (
+                  <p className="text-sm text-slate-500">Este producto usara stock simple si no agregas variantes.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {form.variants.map((variant, index) => (
+                      <div key={`${index}-${variant.talla}-${variant.color}`} className="grid gap-3 rounded-xl border bg-white p-3 md:grid-cols-[1fr_1fr_120px_1fr_auto]">
+                        <input
+                          placeholder="Talla"
+                          value={variant.talla}
+                          onChange={(e) => handleVariantChange(index, "talla", e.target.value)}
+                          className="p-2 rounded-lg border"
+                        />
+                        <input
+                          placeholder="Color"
+                          value={variant.color}
+                          onChange={(e) => handleVariantChange(index, "color", e.target.value)}
+                          className="p-2 rounded-lg border"
+                        />
+                        <input
+                          placeholder="Stock"
+                          type="number"
+                          value={variant.stock}
+                          onChange={(e) => handleVariantChange(index, "stock", e.target.value)}
+                          className="p-2 rounded-lg border"
+                        />
+                        <input
+                          placeholder="SKU variante (opcional)"
+                          value={variant.sku}
+                          onChange={(e) => handleVariantChange(index, "sku", e.target.value)}
+                          className="p-2 rounded-lg border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(index)}
+                          className="px-3 py-2 text-sm rounded-lg bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ))}
+                    {usesVariants && (
+                      <p className="text-xs font-medium text-slate-600">
+                        Stock total calculado: {variantStockTotal}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
               {preview && <img src={preview} alt="Preview" className="w-32 h-32 object-contain rounded-xl mx-auto border" />}
               <button type="submit" className="bg-[#32e1c0] hover:bg-[#a572e1] text-white py-2.5 rounded-xl font-bold transition">
@@ -502,7 +632,14 @@ export default function AdminContent() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             {p.imagenUrl ? <img src={p.imagenUrl} className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0" alt={p.nombre} /> : <div className="w-10 h-10 rounded-lg bg-slate-200 flex-shrink-0" />}
-                            <span className="font-medium truncate max-w-[140px]">{p.nombre}</span>
+                            <div className="min-w-0">
+                              <span className="font-medium truncate max-w-[140px] block">{p.nombre}</span>
+                              {normalizeProductVariants(p.variants).length > 0 && (
+                                <span className="text-[11px] text-slate-400">
+                                  {normalizeProductVariants(p.variants).length} variante(s)
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{p.coleccion}</td>

@@ -4,11 +4,12 @@ export const dynamic = "force-dynamic";
 import { randomInt } from "crypto";
 import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
-import { WebpayPlus, Options, Environment, IntegrationCommerceCodes, IntegrationApiKeys } from "transbank-sdk";
+import { Environment, IntegrationApiKeys, IntegrationCommerceCodes, Options, WebpayPlus } from "transbank-sdk";
 import dbConnect from "@/lib/dbConnect";
+import { validateDiscountCode } from "@/lib/discounts";
 import Order from "@/lib/models/Order";
 import Product from "@/lib/models/Product";
-import { validateDiscountCode } from "@/lib/discounts";
+import { buildVariantKey, findProductVariant, hasProductVariants } from "@/lib/productVariants";
 
 const SHIPPING_COST = 3990;
 const FREE_SHIPPING_THRESHOLD = 60000;
@@ -81,45 +82,82 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isValidEmail(customer.email)) {
-      return NextResponse.json({ ok: false, error: "Correo electrónico inválido" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Correo electronico invalido" }, { status: 400 });
     }
 
     if (!address.region || !address.ciudad || !address.comuna || !address.calle || !address.numero) {
-      return NextResponse.json({ ok: false, error: "Dirección incompleta" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Direccion incompleta" }, { status: 400 });
     }
 
     if (!rawItems.length) {
-      return NextResponse.json({ ok: false, error: "El carrito está vacío" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "El carrito esta vacio" }, { status: 400 });
     }
 
     const invalidId = rawItems.some((item) => !isValidObjectId(String(item?.productId || "").trim()));
     if (invalidId) {
-      return NextResponse.json({ ok: false, error: "Hay productos inválidos en el carrito" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Hay productos invalidos en el carrito" }, { status: 400 });
     }
 
-    const requestedQtyByProduct = new Map<string, number>();
-    rawItems.forEach((item) => {
-      const productId = String(item.productId || "").trim();
-      const quantity = Math.floor(Number(item.cantidad || 0));
-      requestedQtyByProduct.set(productId, (requestedQtyByProduct.get(productId) || 0) + quantity);
+    const requestedItems = rawItems.map((item) => ({
+      productId: String(item.productId || "").trim(),
+      cantidad: Math.floor(Number(item.cantidad || 0)),
+      talla: cleanText(item.talla, 40),
+      color: cleanText(item.color, 40),
+    }));
+
+    if (requestedItems.some((item) => !Number.isFinite(item.cantidad) || item.cantidad < 1)) {
+      return NextResponse.json({ ok: false, error: "Cantidad invalida en el carrito" }, { status: 400 });
+    }
+
+    const requestedQtyBySelection = new Map<string, { productId: string; cantidad: number; talla: string; color: string }>();
+    requestedItems.forEach((item) => {
+      const key = `${item.productId}__${buildVariantKey(item)}`;
+      const previous = requestedQtyBySelection.get(key);
+      requestedQtyBySelection.set(key, {
+        productId: item.productId,
+        cantidad: (previous?.cantidad ?? 0) + item.cantidad,
+        talla: item.talla,
+        color: item.color,
+      });
     });
 
-    const productIds = [...requestedQtyByProduct.keys()];
+    const productIds = [...new Set(requestedItems.map((item) => item.productId))];
     const products = await Product.find({ _id: { $in: productIds }, isActive: true }).lean();
     const productsById = new Map(products.map((product) => [String(product._id), product]));
 
     const missingProduct = productIds.find((productId) => !productsById.has(productId));
     if (missingProduct) {
-      return NextResponse.json({ ok: false, error: "Uno de los productos ya no está disponible" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Uno de los productos ya no esta disponible" }, { status: 400 });
     }
 
-    for (const [productId, quantity] of requestedQtyByProduct.entries()) {
-      const product = productsById.get(productId);
-      if (!product || !Number.isFinite(quantity) || quantity < 1) {
-        return NextResponse.json({ ok: false, error: "Cantidad inválida en el carrito" }, { status: 400 });
+    for (const request of requestedQtyBySelection.values()) {
+      const product = productsById.get(request.productId);
+      if (!product) {
+        return NextResponse.json({ ok: false, error: "Uno de los productos ya no esta disponible" }, { status: 400 });
       }
 
-      if (product.stock < quantity) {
+      if (hasProductVariants(product.variants)) {
+        const variant = findProductVariant(product.variants, request);
+        const label = [request.talla, request.color].filter(Boolean).join(" / ");
+
+        if (!variant) {
+          return NextResponse.json(
+            { ok: false, error: `La variante seleccionada ya no esta disponible para ${product.nombre}` },
+            { status: 400 }
+          );
+        }
+
+        if (variant.stock < request.cantidad) {
+          return NextResponse.json(
+            { ok: false, error: `No hay stock suficiente para ${product.nombre}${label ? ` (${label})` : ""}` },
+            { status: 400 }
+          );
+        }
+
+        continue;
+      }
+
+      if (Number(product.stock) < request.cantidad) {
         return NextResponse.json(
           { ok: false, error: `No hay stock suficiente para ${product.nombre}` },
           { status: 400 }
@@ -127,20 +165,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const items = rawItems.map((item) => {
-      const productId = String(item.productId || "").trim();
-      const product = productsById.get(productId)!;
-      const quantity = Math.floor(Number(item.cantidad || 0));
+    const items = requestedItems.map((item) => {
+      const product = productsById.get(item.productId)!;
 
       return {
-        productId,
+        productId: item.productId,
         nombre: product.nombre,
         precio: Number(product.precio),
-        cantidad: quantity,
+        cantidad: item.cantidad,
         imagenUrl: product.imagenUrl || "",
         coleccion: product.coleccion || "",
-        talla: cleanText(item.talla, 40),
-        color: cleanText(item.color, 40),
+        talla: item.talla,
+        color: item.color,
       };
     });
 
@@ -163,7 +199,7 @@ export async function POST(req: NextRequest) {
 
       if (!discountResult.valid) {
         return NextResponse.json(
-          { ok: false, error: discountResult.message || "Cupón no válido" },
+          { ok: false, error: discountResult.message || "Cupon no valido" },
           { status: 400 }
         );
       }

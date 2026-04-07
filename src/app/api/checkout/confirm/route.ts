@@ -2,12 +2,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { WebpayPlus, Options, Environment, IntegrationCommerceCodes, IntegrationApiKeys } from "transbank-sdk";
+import { Environment, IntegrationApiKeys, IntegrationCommerceCodes, Options, WebpayPlus } from "transbank-sdk";
 import dbConnect from "@/lib/dbConnect";
+import DiscountCode from "@/lib/models/DiscountCode";
 import Order from "@/lib/models/Order";
 import Product from "@/lib/models/Product";
-import DiscountCode from "@/lib/models/DiscountCode";
-import { sendOrderConfirmation, sendNewOrderNotification } from "@/lib/mail";
+import { sendNewOrderNotification, sendOrderConfirmation } from "@/lib/mail";
+import { buildVariantKey, findProductVariant, getProductStock, hasProductVariants, normalizeProductVariants } from "@/lib/productVariants";
 
 type PaymentResult = {
   amount: number;
@@ -33,31 +34,71 @@ function getBaseUrl(req: NextRequest) {
   return (process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin).replace(/\/$/, "");
 }
 
-async function decrementStock(items: { productId: string; cantidad: number }[]) {
-  const requestedQtyByProduct = new Map<string, number>();
+async function decrementStock(items: { productId: string; cantidad: number; talla?: string; color?: string }[]) {
+  const requestedQtyBySelection = new Map<string, { productId: string; cantidad: number; talla: string; color: string }>();
+
   items.forEach((item) => {
-    requestedQtyByProduct.set(
-      item.productId,
-      (requestedQtyByProduct.get(item.productId) || 0) + item.cantidad
-    );
+    const talla = typeof item.talla === "string" ? item.talla.trim() : "";
+    const color = typeof item.color === "string" ? item.color.trim() : "";
+    const key = `${item.productId}__${buildVariantKey({ talla, color })}`;
+    const previous = requestedQtyBySelection.get(key);
+
+    requestedQtyBySelection.set(key, {
+      productId: item.productId,
+      cantidad: (previous?.cantidad ?? 0) + item.cantidad,
+      talla,
+      color,
+    });
   });
 
-  const productIds = [...requestedQtyByProduct.keys()];
-  const products = await Product.find({ _id: { $in: productIds } }).select({ stock: 1 }).lean();
+  const productIds = [...new Set(items.map((item) => item.productId))];
+  const products = await Product.find({ _id: { $in: productIds } });
   const productsById = new Map(products.map((product) => [String(product._id), product]));
 
-  for (const [productId, quantity] of requestedQtyByProduct.entries()) {
-    const product = productsById.get(productId);
-    if (!product || product.stock < quantity) {
-      throw new Error(`Stock insuficiente para ${productId}`);
+  for (const request of requestedQtyBySelection.values()) {
+    const product = productsById.get(request.productId);
+    if (!product) {
+      throw new Error(`Stock insuficiente para ${request.productId}`);
+    }
+
+    if (hasProductVariants(product.variants)) {
+      const variant = findProductVariant(product.variants, request);
+      if (!variant || variant.stock < request.cantidad) {
+        throw new Error(`Stock insuficiente para ${request.productId}`);
+      }
+      continue;
+    }
+
+    if (Number(product.stock) < request.cantidad) {
+      throw new Error(`Stock insuficiente para ${request.productId}`);
     }
   }
 
-  await Promise.all(
-    [...requestedQtyByProduct.entries()].map(([productId, quantity]) =>
-      Product.findByIdAndUpdate(productId, { $inc: { stock: -quantity } })
-    )
-  );
+  for (const product of products) {
+    const productId = String(product._id);
+    const requests = [...requestedQtyBySelection.values()].filter((request) => request.productId === productId);
+    if (!requests.length) continue;
+
+    if (hasProductVariants(product.variants)) {
+      const nextVariants = normalizeProductVariants(product.variants).map((variant) => {
+        const request = requests.find((entry) => buildVariantKey(entry) === buildVariantKey(variant));
+        if (!request) return variant;
+
+        return {
+          ...variant,
+          stock: Math.max(0, variant.stock - request.cantidad),
+        };
+      });
+
+      product.set("variants", nextVariants);
+      product.set("stock", getProductStock(nextVariants, product.stock));
+    } else {
+      const quantity = requests.reduce((sum, request) => sum + request.cantidad, 0);
+      product.set("stock", Math.max(0, Number(product.stock) - quantity));
+    }
+
+    await product.save();
+  }
 }
 
 async function finalizePaidOrder(token: string, result: PaymentResult) {

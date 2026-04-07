@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../lib/dbConnect";
 import Product from "../../../lib/models/Product";
 import { requireAdmin } from "@/lib/adminAuth";
+import { getProductStock, normalizeProductVariants } from "@/lib/productVariants";
 
 export async function POST(req: NextRequest) {
   const unauthorized = await requireAdmin(req);
@@ -21,17 +22,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const variants = normalizeProductVariants(data.variants);
+
     const doc = await Product.create({
       nombre: data.nombre,
       descripcion: data.descripcion,
       precio: Number(data.precio),
       imagenUrl: data.imagenUrl || "",
-      stock: Number(data.stock),
+      stock: getProductStock(variants, data.stock),
       minStock: Number(data.minStock ?? 5),
       coleccion: data.coleccion,
       sku: data.sku || undefined,
       tags: Array.isArray(data.tags) ? data.tags : [],
-      variants: Array.isArray(data.variants) ? data.variants : [],
+      variants,
     });
 
     return NextResponse.json({ ok: true, product: doc }, { status: 201 });

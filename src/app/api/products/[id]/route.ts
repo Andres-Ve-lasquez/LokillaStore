@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../../lib/dbConnect";
 import Product from "../../../../lib/models/Product";
 import { requireAdmin } from "@/lib/adminAuth";
+import { getProductStock, normalizeProductVariants } from "@/lib/productVariants";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -36,6 +37,7 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     await dbConnect();
     const { id } = await params;
     const data = await req.json();
+    const variants = normalizeProductVariants(data.variants);
 
     const doc = await Product.findByIdAndUpdate(
       id,
@@ -44,11 +46,13 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
         descripcion: data.descripcion,
         precio: Number(data.precio),
         imagenUrl: data.imagenUrl ?? "",
-        stock: Number(data.stock),
+        stock: getProductStock(variants, data.stock),
         minStock: Number(data.minStock ?? 5),
         coleccion: data.coleccion,
         sku: data.sku || undefined,
         isActive: data.isActive ?? true,
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        variants,
       },
       { new: true, runValidators: true }
     );
