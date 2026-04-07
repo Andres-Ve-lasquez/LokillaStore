@@ -80,6 +80,13 @@ function OrdersSection() {
           <button onClick={() => fetchOrders(filterStatus)} className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">
             Actualizar
           </button>
+          <a
+            href="/api/orders/export"
+            download
+            className="text-sm px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1"
+          >
+            ⬇ Excel
+          </a>
         </div>
       </div>
 
@@ -443,10 +450,50 @@ export default function AdminContent() {
 
   const lowStockCount = useMemo(() => lowStock.length, [lowStock]);
 
+  // ── Contenido / Banners ────────────────────────────────────────────
+  type Banner = { image: string; title: string; subtitle: string; ctaLabel: string; ctaHref: string };
+  const EMPTY_BANNER: Banner = { image: "", title: "", subtitle: "", ctaLabel: "Ver tienda", ctaHref: "/catalogo" };
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [bannerMsg, setBannerMsg] = useState("");
+  const [loadingBanners, setLoadingBanners] = useState(false);
+
+  const fetchBanners = async () => {
+    setLoadingBanners(true);
+    try {
+      const res = await fetch("/api/site-config");
+      const j = await res.json();
+      if (j?.config?.banners) setBanners(j.config.banners);
+    } finally {
+      setLoadingBanners(false);
+    }
+  };
+
+  useEffect(() => { fetchBanners(); }, []);
+
+  const saveBanners = async () => {
+    setBannerMsg("");
+    const res = await fetch("/api/site-config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ banners }),
+    });
+    const j = await res.json();
+    setBannerMsg(j.ok ? "¡Banners guardados! Los cambios se ven en el inicio." : "Error al guardar");
+  };
+
+  const updateBanner = (i: number, field: keyof Banner, value: string) => {
+    setBanners((prev) => prev.map((b, idx) => idx === i ? { ...b, [field]: value } : b));
+  };
+
+  const addBanner = () => setBanners((prev) => [...prev, { ...EMPTY_BANNER }]);
+  const removeBanner = (i: number) => setBanners((prev) => prev.filter((_, idx) => idx !== i));
+
+  // ── Tabs ────────────────────────────────────────────────────────────
   const TABS = [
     { key: "productos", label: "📦 Productos", badge: lowStockCount > 0 ? lowStockCount : null },
     { key: "cupones",   label: "🎟️ Cupones",   badge: null },
     { key: "ordenes",   label: "🛒 Órdenes",   badge: null },
+    { key: "contenido", label: "🖼️ Banners",   badge: null },
   ];
   const [tab, setTab] = useState("productos");
 
@@ -727,6 +774,81 @@ export default function AdminContent() {
 
       {/* Tab: Órdenes */}
       {tab === "ordenes" && <OrdersSection />}
+
+      {/* Tab: Banners */}
+      {tab === "contenido" && (
+        <div className="space-y-6">
+          <section className="bg-white rounded-2xl border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-[#1a4876]">🖼️ Banners del inicio</h2>
+              <button onClick={fetchBanners} className="text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">
+                {loadingBanners ? "Cargando..." : "Recargar"}
+              </button>
+            </div>
+            <p className="text-sm text-slate-500 mb-5">
+              Edita el texto, subtítulo y botón de cada banner. Para cambiar la imagen sube una foto en{" "}
+              <code className="bg-slate-100 px-1 rounded">/public/banners/</code> y escribe el nombre aquí.
+            </p>
+
+            <div className="space-y-5">
+              {banners.map((b, i) => (
+                <div key={i} className="border rounded-xl p-4 bg-slate-50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm text-slate-700">Banner {i + 1}</p>
+                    <button onClick={() => removeBanner(i)} className="text-xs text-red-500 hover:text-red-700">
+                      Eliminar
+                    </button>
+                  </div>
+                  {b.image && (
+                    <div className="w-full h-24 rounded-lg overflow-hidden bg-slate-200">
+                      <img src={b.image} alt="" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-500">Ruta de imagen</label>
+                      <input value={b.image} onChange={(e) => updateBanner(i, "image", e.target.value)}
+                        placeholder="/banners/foto1.jpg" className="w-full mt-1 p-2 rounded-lg border text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-500">Título</label>
+                      <input value={b.title} onChange={(e) => updateBanner(i, "title", e.target.value)}
+                        placeholder="Título del banner" className="w-full mt-1 p-2 rounded-lg border text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-500">Subtítulo</label>
+                      <input value={b.subtitle} onChange={(e) => updateBanner(i, "subtitle", e.target.value)}
+                        placeholder="Subtítulo" className="w-full mt-1 p-2 rounded-lg border text-sm" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs font-medium text-slate-500">Texto botón</label>
+                        <input value={b.ctaLabel} onChange={(e) => updateBanner(i, "ctaLabel", e.target.value)}
+                          placeholder="Ver tienda" className="w-full mt-1 p-2 rounded-lg border text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-500">Link botón</label>
+                        <input value={b.ctaHref} onChange={(e) => updateBanner(i, "ctaHref", e.target.value)}
+                          placeholder="/catalogo" className="w-full mt-1 p-2 rounded-lg border text-sm" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 mt-5">
+              <button onClick={addBanner} className="flex-1 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 hover:border-[#32e1c0] hover:text-[#32e1c0] text-sm font-medium transition">
+                + Agregar banner
+              </button>
+              <button onClick={saveBanners} className="flex-1 py-2.5 rounded-xl bg-[#32e1c0] hover:bg-[#a572e1] text-white font-bold transition">
+                Guardar cambios
+              </button>
+            </div>
+            {bannerMsg && <p className="mt-3 text-emerald-600 font-semibold text-sm">{bannerMsg}</p>}
+          </section>
+        </div>
+      )}
     </div>
   );
 }

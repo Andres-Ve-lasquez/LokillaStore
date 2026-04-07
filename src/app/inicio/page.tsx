@@ -33,20 +33,42 @@ function pickList(payload: AnyList): RawItem[] {
   return [];
 }
 
+const DEFAULT_SLIDES = [
+  { image: "/banners/foto1.jpg", title: "Lazos y accesorios que encantan", subtitle: "Nueva temporada", cta: { label: "Ver tienda", href: "/catalogo" } },
+  { image: "/banners/foto2.jpg", title: "Colores que brillan", subtitle: "Edición limitada", cta: { label: "Colecciones", href: "/colecciones" } },
+  { image: "/banners/foto3.jpg", title: "Hecho con cariño ✨", subtitle: "Producción local", cta: { label: "Conoce más", href: "/informativo" } },
+];
+
 export default function InicioPage() {
   const [nuevos, setNuevos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [slides, setSlides] = useState(DEFAULT_SLIDES);
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
       try {
-        const res = await fetch("/api/products", { cache: "no-store" });
-        const payload: AnyList = res.ok ? await res.json() : [];
+        const [prodRes, configRes] = await Promise.all([
+          fetch("/api/products", { cache: "no-store" }),
+          fetch("/api/site-config", { cache: "no-store" }),
+        ]);
+        const payload: AnyList = prodRes.ok ? await prodRes.json() : [];
         const list = pickList(payload).map(toProduct);
         const last8 = list.slice(-8).reverse();
         if (alive) setNuevos(last8);
+
+        if (configRes.ok) {
+          const { config } = await configRes.json();
+          if (config?.banners?.length) {
+            setSlides(config.banners.map((b: RawItem) => ({
+              image: b.image,
+              title: b.title,
+              subtitle: b.subtitle,
+              cta: { label: b.ctaLabel, href: b.ctaHref },
+            })));
+          }
+        }
       } catch {
         if (alive) setNuevos([]);
       } finally {
@@ -54,31 +76,8 @@ export default function InicioPage() {
       }
     })();
 
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
-
-  const slides = [
-    {
-      image: "/banners/foto1.jpg",
-      title: "Lazos y accesorios que encantan",
-      subtitle: "Nueva temporada",
-      cta: { label: "Ver tienda", href: "/catalogo" },
-    },
-    {
-      image: "/banners/foto2.jpg",
-      title: "Colores que brillan",
-      subtitle: "Edicion limitada",
-      cta: { label: "Colecciones", href: "/colecciones" },
-    },
-    {
-      image: "/banners/foto3.jpg",
-      title: "Hecho con carino",
-      subtitle: "Produccion local",
-      cta: { label: "Conoce mas", href: "/informativo" },
-    },
-  ];
 
   return (
     <main className="mx-auto max-w-7xl px-4 pb-16 pt-4 md:pt-6">

@@ -34,7 +34,7 @@ export default function CheckoutPage() {
     nombre: "", email: "", telefono: "",
     region: REGIONES[6], ciudad: "", comuna: "", calle: "", numero: "", depto: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean | "mp">(false);
   const [error, setError] = useState("");
 
   const [couponInput, setCouponInput] = useState("");
@@ -83,6 +83,40 @@ export default function CheckoutPage() {
     setAppliedCoupon("");
   };
 
+  const buildPayload = () => ({
+    customer: { nombre: form.nombre, email: form.email, telefono: form.telefono },
+    address: { region: form.region, ciudad: form.ciudad, comuna: form.comuna, calle: form.calle, numero: form.numero, depto: form.depto },
+    items: items.map((it) => ({
+      productId: it.productId, nombre: it.nombre, precio: it.precio,
+      cantidad: it.cantidad, imagenUrl: it.imagenUrl ?? "", talla: it.talla, color: it.color,
+    })),
+    subtotal, shippingCost: shipping, discount, couponCode: appliedCoupon, notes: checkoutNotes, total,
+  });
+
+  const handleMercadoPago = async () => {
+    if (!items.length) return;
+    if (!acceptedPolicies) { setError("Debes aceptar las políticas de compra antes de continuar."); return; }
+    setLoading("mp");
+    setError("");
+    try {
+      const res = await fetch("/api/mercadopago/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { setError(data.error ?? "Error al procesar el pedido"); return; }
+      clear();
+      // En sandbox usa sandboxInitPoint, en producción usa initPoint
+      const url = process.env.NODE_ENV === "production" ? data.initPoint : (data.sandboxInitPoint ?? data.initPoint);
+      window.location.href = url;
+    } catch {
+      setError("Error de conexión, intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!items.length) return;
@@ -99,24 +133,7 @@ export default function CheckoutPage() {
       const res = await fetch("/api/checkout/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer: { nombre: form.nombre, email: form.email, telefono: form.telefono },
-          address: { region: form.region, ciudad: form.ciudad, comuna: form.comuna, calle: form.calle, numero: form.numero, depto: form.depto },
-          items: items.map((it) => ({
-            productId: it.productId,
-            nombre: it.nombre,
-            precio: it.precio,
-            cantidad: it.cantidad,
-            imagenUrl: it.imagenUrl ?? "",
-            talla: it.talla,
-            color: it.color,
-          })),
-          subtotal,
-          shippingCost: shipping,
-          discount,
-          couponCode: appliedCoupon,
-          notes: checkoutNotes,
-        }),
+        body: JSON.stringify(buildPayload()),
       });
 
       const data = await res.json();
@@ -295,14 +312,48 @@ export default function CheckoutPage() {
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-2xl bg-[#1a4876] py-4 text-base font-bold text-white transition hover:bg-[#1a4876]/90 disabled:opacity-60 md:text-lg"
-          >
-            {loading ? "Procesando..." : "Pagar con WebPay"}
-          </button>
-          <p className="text-center text-xs text-slate-400">Seras redirigido al portal seguro de Transbank</p>
+          {/* Métodos de pago */}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-slate-600">Elige tu método de pago:</p>
+
+            {/* WebPay */}
+            <button
+              type="submit"
+              disabled={!!loading}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#1a4876] py-4 text-base font-bold text-white transition hover:bg-[#1a4876]/90 disabled:opacity-60"
+            >
+              {loading === true ? "Procesando..." : (
+                <>
+                  <span>💳</span>
+                  <span>Pagar con WebPay</span>
+                </>
+              )}
+            </button>
+            <p className="text-center text-xs text-slate-400">Débito, crédito y prepago — Transbank</p>
+
+            {/* Separador */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 border-t" />
+              <span className="text-xs text-slate-400">o también</span>
+              <div className="flex-1 border-t" />
+            </div>
+
+            {/* Mercado Pago */}
+            <button
+              type="button"
+              disabled={!!loading}
+              onClick={handleMercadoPago}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#009ee3] py-4 text-base font-bold text-[#009ee3] transition hover:bg-[#009ee3] hover:text-white disabled:opacity-60"
+            >
+              {loading === "mp" ? "Procesando..." : (
+                <>
+                  <span>🛒</span>
+                  <span>Pagar con Mercado Pago</span>
+                </>
+              )}
+            </button>
+            <p className="text-center text-xs text-slate-400">Tarjetas, transferencia y más opciones</p>
+          </div>
         </form>
 
         <aside className="lg:col-span-1">
