@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,35 +22,32 @@ export default function HeroCarousel({
 
   useEffect(() => {
     if (paused || slides.length <= 1) return;
-    timer.current && clearInterval(timer.current);
+    if (timer.current) clearInterval(timer.current);
+
     timer.current = setInterval(() => {
       setIdx((i) => (i + 1) % slides.length);
     }, intervalMs);
-    return () => {
-      timer.current && clearInterval(timer.current);
-    };
-  }, [paused, slides.length, intervalMs]);
 
-  const go = (n: number) =>
-    setIdx((i) => (n + slides.length) % slides.length);
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [intervalMs, paused, slides.length]);
+
+  const go = (n: number) => setIdx((i) => (n + slides.length) % slides.length);
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-3xl shadow-xl"
+      className="relative w-full overflow-hidden rounded-[2rem] shadow-xl"
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
       style={{ background: "linear-gradient(90deg,#32e1c0,#3bb1e6,#a572e1)" }}
     >
-      {/* pista */}
-      <div
-        className="relative h-[260px] md:h-[360px] lg:h-[420px]"
-      >
+      <div className="relative h-[300px] sm:h-[360px] lg:h-[420px]">
         {slides.map((s, i) => (
           <div
             key={i}
             className={`absolute inset-0 transition-opacity duration-700 ${i === idx ? "opacity-100" : "opacity-0"}`}
           >
-            {/* imagen */}
             <Image
               src={s.image}
               alt={s.alt || s.title || `slide-${i}`}
@@ -57,26 +55,25 @@ export default function HeroCarousel({
               className="object-cover"
               priority={i === 0}
             />
-            {/* overlay para contraste */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
-            {/* texto */}
+
             {(s.title || s.subtitle || s.cta) && (
-              <div className="absolute inset-0 flex items-center px-6 md:px-12">
-                <div className="max-w-xl text-white">
+              <div className="absolute inset-0 flex items-center px-4 sm:px-8 md:px-12">
+                <div className="max-w-[19rem] rounded-3xl bg-black/20 p-4 text-white backdrop-blur-[2px] sm:max-w-xl sm:p-6">
                   {s.subtitle && (
-                    <p className="uppercase tracking-widest text-xs md:text-sm opacity-90">
+                    <p className="text-xs uppercase tracking-widest opacity-90 md:text-sm">
                       {s.subtitle}
                     </p>
                   )}
                   {s.title && (
-                    <h2 className="text-2xl md:text-4xl font-extrabold drop-shadow-sm mt-1">
+                    <h2 className="mt-1 text-2xl font-extrabold drop-shadow-sm sm:text-3xl md:text-4xl">
                       {s.title}
                     </h2>
                   )}
                   {s.cta && (
                     <Link
                       href={s.cta.href}
-                      className="inline-block mt-4 rounded-full bg-white/95 text-black font-semibold px-6 py-2 hover:bg-white"
+                      className="mt-4 inline-block rounded-full bg-white/95 px-5 py-2.5 text-sm font-semibold text-black hover:bg-white sm:px-6 sm:text-base"
                     >
                       {s.cta.label}
                     </Link>
@@ -88,24 +85,22 @@ export default function HeroCarousel({
         ))}
       </div>
 
-      {/* flechas */}
       <button
         aria-label="Anterior"
         onClick={() => go(idx - 1)}
-        className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center w-9 h-9 rounded-full bg-white/90 hover:bg-white text-black shadow"
+        className="absolute left-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow hover:bg-white sm:grid"
       >
         ‹
       </button>
       <button
         aria-label="Siguiente"
         onClick={() => go(idx + 1)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-9 h-9 rounded-full bg-white/90 hover:bg-white text-black shadow"
+        className="absolute right-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow hover:bg-white sm:grid"
       >
         ›
       </button>
 
-      {/* dots */}
-      <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
         {slides.map((_, i) => (
           <button
             key={i}

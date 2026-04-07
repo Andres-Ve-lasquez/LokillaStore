@@ -1,4 +1,5 @@
 "use client";
+
 import { useCart } from "@/components/cart/CartProvider";
 
 export type Product = {
@@ -24,42 +25,39 @@ export default function ProductCard({ p }: { p: Product }) {
     });
 
   return (
-    <div className="
-      bg-gradient-to-tr from-[#32e1c0] via-[#3bb1e6] to-[#a572e1]
-      p-[2.5px] rounded-3xl hover:shadow-2xl transition
-      hover:from-[#a572e1] hover:via-[#32e1c0] hover:to-[#3bb1e6]
-    ">
-      <div className="bg-white rounded-3xl p-4 pb-6 flex flex-col items-center">
-        <div className="relative w-full aspect-[1/1] rounded-2xl overflow-hidden bg-[#f7faff]">
-          {/* usa <img> para no depender de next/image domains */}
-          <img
-            src={p.imagenUrl}
-            alt={p.nombre}
-            className="w-full h-full object-contain"
-          />
+    <div
+      className="
+        h-full rounded-3xl bg-gradient-to-tr from-[#32e1c0] via-[#3bb1e6] to-[#a572e1]
+        p-[2.5px] transition hover:shadow-2xl
+        hover:from-[#a572e1] hover:via-[#32e1c0] hover:to-[#3bb1e6]
+      "
+    >
+      <div className="flex h-full flex-col items-center rounded-3xl bg-white p-3.5 pb-5 sm:p-4 sm:pb-6">
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#f7faff]">
+          <img src={p.imagenUrl} alt={p.nombre} className="h-full w-full object-contain" />
         </div>
 
-        <span className="uppercase text-xs text-[#3bb1e6] tracking-wider mt-4">
-          {p.seccion || "Colección"}
+        <span className="mt-4 text-[11px] uppercase tracking-wider text-[#3bb1e6] sm:text-xs">
+          {p.seccion || "Coleccion"}
         </span>
 
-        <h3 className="text-lg font-bold text-[#1a4876] text-center mt-1 line-clamp-2">
+        <h3 className="mt-1 line-clamp-2 text-center text-base font-bold text-[#1a4876] sm:text-lg">
           {p.nombre}
         </h3>
 
-        <p className="text-[#19243b] font-semibold mt-1">
+        <p className="mt-1 text-sm font-semibold text-[#19243b] sm:text-base">
           ${p.precio.toLocaleString("es-CL")} CLP
         </p>
 
         {p.stock > 0 ? (
           <button
             onClick={add}
-            className="mt-3 w-full rounded-full bg-[#32e1c0] hover:bg-[#a572e1] text-white font-semibold py-2.5 transition"
+            className="mt-3 w-full rounded-full bg-[#32e1c0] py-2.5 text-sm font-semibold text-white transition hover:bg-[#a572e1] sm:text-base"
           >
             Agregar al carrito
           </button>
         ) : (
-          <span className="mt-3 w-full text-center rounded-full border-2 border-[#a572e1] text-[#a572e1] font-semibold py-2.5">
+          <span className="mt-3 w-full rounded-full border-2 border-[#a572e1] py-2.5 text-center text-sm font-semibold text-[#a572e1] sm:text-base">
             Agotado :(
           </span>
         )}

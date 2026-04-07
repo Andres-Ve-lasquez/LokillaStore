@@ -1,12 +1,13 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/components/cart/CartProvider";
 
 const REGIONES = [
-  "Arica y Parinacota", "Tarapacá", "Antofagasta", "Atacama", "Coquimbo",
-  "Valparaíso", "Metropolitana de Santiago", "O'Higgins", "Maule", "Ñuble",
-  "Biobío", "La Araucanía", "Los Ríos", "Los Lagos", "Aysén", "Magallanes",
+  "Arica y Parinacota", "Tarapaca", "Antofagasta", "Atacama", "Coquimbo",
+  "Valparaiso", "Metropolitana de Santiago", "O'Higgins", "Maule", "Nuble",
+  "Biobio", "La Araucania", "Los Rios", "Los Lagos", "Aysen", "Magallanes",
 ];
 
 const SHIPPING_COST = 3990;
@@ -36,7 +37,6 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Cupón
   const [couponInput, setCouponInput] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponMsg, setCouponMsg] = useState("");
@@ -64,12 +64,12 @@ export default function CheckoutPage() {
         setDiscount(Math.round(j.discountAmount));
         setAppliedCoupon(couponInput.trim().toUpperCase());
         setCouponValid(true);
-        setCouponMsg(`✅ Cupón aplicado — descuento de ${moneyCLP(Math.round(j.discountAmount))}`);
+        setCouponMsg(`Cupon aplicado: descuento de ${moneyCLP(Math.round(j.discountAmount))}`);
       } else {
-        setCouponMsg(`❌ ${j.message ?? "Cupón no válido"}`);
+        setCouponMsg(j.message ?? "Cupon no valido");
       }
     } catch {
-      setCouponMsg("❌ Error al validar el cupón");
+      setCouponMsg("Error al validar el cupon");
     } finally {
       setCouponLoading(false);
     }
@@ -88,7 +88,7 @@ export default function CheckoutPage() {
     if (!items.length) return;
 
     if (!acceptedPolicies) {
-      setError("Debes aceptar las políticas de compra antes de continuar.");
+      setError("Debes aceptar las politicas de compra antes de continuar.");
       return;
     }
 
@@ -128,7 +128,7 @@ export default function CheckoutPage() {
       clear();
       window.location.href = `${data.url}?token_ws=${data.token}`;
     } catch {
-      setError("Error de conexión, intenta de nuevo.");
+      setError("Error de conexion, intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -136,99 +136,145 @@ export default function CheckoutPage() {
 
   if (!items.length) {
     return (
-      <main className="max-w-xl mx-auto px-4 py-20 text-center">
-        <p className="text-xl font-semibold text-slate-700">Tu carrito está vacío.</p>
-        <a href="/catalogo" className="mt-4 inline-block underline text-[#3bb1e6]">Ir al catálogo</a>
+      <main className="mx-auto max-w-xl px-4 py-16 text-center md:py-20">
+        <p className="text-xl font-semibold text-slate-700">Tu carrito esta vacio.</p>
+        <a href="/catalogo" className="mt-4 inline-block text-[#3bb1e6] underline">Ir al catalogo</a>
       </main>
     );
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-extrabold text-[#1a4876] mb-8">Finalizar pedido</h1>
+    <main className="mx-auto max-w-6xl px-4 py-8 md:py-10">
+      <h1 className="mb-8 text-2xl font-extrabold text-[#1a4876] md:text-3xl">Finalizar pedido</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-8">
-
-          {/* Datos personales */}
-          <section className="bg-white rounded-2xl border p-6 space-y-4">
-            <h2 className="font-bold text-lg text-[#1a4876]">Datos de contacto</h2>
-            <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
+        <form onSubmit={handleSubmit} className="space-y-6 lg:col-span-2 lg:space-y-8">
+          <section className="space-y-4 rounded-2xl border bg-white p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-[#1a4876]">Datos de contacto</h2>
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-slate-600">Nombre completo *</label>
-                <input name="nombre" required value={form.nombre} onChange={handle}
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+                <input
+                  name="nombre"
+                  required
+                  value={form.nombre}
+                  onChange={handle}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-600">Teléfono *</label>
-                <input name="telefono" required value={form.telefono} onChange={handle} placeholder="+56 9 1234 5678"
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+                <label className="text-sm font-medium text-slate-600">Telefono *</label>
+                <input
+                  name="telefono"
+                  required
+                  value={form.telefono}
+                  onChange={handle}
+                  placeholder="+56 9 1234 5678"
+                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-slate-600">
-                Correo electrónico * <span className="text-xs text-slate-400">(aquí recibirás la confirmación)</span>
+                Correo electronico * <span className="text-xs text-slate-400">(aqui recibiras la confirmacion)</span>
               </label>
-              <input name="email" type="email" required value={form.email} onChange={handle}
-                className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+              <input
+                name="email"
+                type="email"
+                required
+                value={form.email}
+                onChange={handle}
+                className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+              />
             </div>
           </section>
 
-          {/* Dirección */}
-          <section className="bg-white rounded-2xl border p-6 space-y-4">
-            <h2 className="font-bold text-lg text-[#1a4876]">Dirección de envío</h2>
+          <section className="space-y-4 rounded-2xl border bg-white p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-[#1a4876]">Direccion de envio</h2>
             <div>
-              <label className="text-sm font-medium text-slate-600">Región *</label>
-              <select name="region" required value={form.region} onChange={handle}
-                className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]">
+              <label className="text-sm font-medium text-slate-600">Region *</label>
+              <select
+                name="region"
+                required
+                value={form.region}
+                onChange={handle}
+                className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+              >
                 {REGIONES.map((r) => <option key={r}>{r}</option>)}
               </select>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-slate-600">Ciudad *</label>
-                <input name="ciudad" required value={form.ciudad} onChange={handle}
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+                <input
+                  name="ciudad"
+                  required
+                  value={form.ciudad}
+                  onChange={handle}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                />
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-600">Comuna *</label>
-                <input name="comuna" required value={form.comuna} onChange={handle}
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+                <input
+                  name="comuna"
+                  required
+                  value={form.comuna}
+                  onChange={handle}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                />
               </div>
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div className="md:col-span-2">
                 <label className="text-sm font-medium text-slate-600">Calle *</label>
-                <input name="calle" required value={form.calle} onChange={handle}
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+                <input
+                  name="calle"
+                  required
+                  value={form.calle}
+                  onChange={handle}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-600">Número *</label>
-                <input name="numero" required value={form.numero} onChange={handle}
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+                <label className="text-sm font-medium text-slate-600">Numero *</label>
+                <input
+                  name="numero"
+                  required
+                  value={form.numero}
+                  onChange={handle}
+                  className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-slate-600">
                 Dpto / Casa / Block <span className="text-xs text-slate-400">(opcional)</span>
               </label>
-              <input name="depto" value={form.depto} onChange={handle} placeholder="Ej: Depto 204, Casa B"
-                className="mt-1 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+              <input
+                name="depto"
+                value={form.depto}
+                onChange={handle}
+                placeholder="Ej: Depto 204, Casa B"
+                className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+              />
             </div>
           </section>
 
-          {/* Notas */}
-          <section className="bg-white rounded-2xl border p-6">
+          <section className="rounded-2xl border bg-white p-5 sm:p-6">
             <label className="font-bold text-slate-700">
               Notas del pedido <span className="text-xs font-normal text-slate-400">(opcional)</span>
             </label>
-            <textarea rows={3} value={checkoutNotes} onChange={(e) => setCheckoutNotes(e.target.value)}
+            <textarea
+              rows={3}
+              value={checkoutNotes}
+              onChange={(e) => setCheckoutNotes(e.target.value)}
               placeholder="Ej: timbre roto, dejar con el conserje..."
-              className="mt-2 w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]" />
+              className="mt-2 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+            />
           </section>
 
-          <section className="bg-white rounded-2xl border p-6">
+          <section className="rounded-2xl border bg-white p-5 sm:p-6">
             <label className="flex items-start gap-3 text-sm text-slate-600">
               <input
                 type="checkbox"
@@ -237,8 +283,7 @@ export default function CheckoutPage() {
                 onChange={(e) => setAcceptedPolicies(e.target.checked)}
               />
               <span>
-                Confirmo que leí los tiempos de producción, envíos, cambios y políticas del sitio.
-                {" "}
+                Confirmo que lei los tiempos de produccion, envios, cambios y politicas del sitio.{" "}
                 <Link href="/informativo#terminos" className="font-semibold text-[#3bb1e6] underline">
                   Ver informativos
                 </Link>
@@ -247,96 +292,97 @@ export default function CheckoutPage() {
           </section>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">{error}</div>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
           )}
 
-          <button type="submit" disabled={loading}
-            className="w-full py-4 rounded-2xl font-bold text-white text-lg bg-[#1a4876] hover:bg-[#1a4876]/90 disabled:opacity-60 transition">
-            {loading ? "Procesando..." : "Pagar con WebPay 🔒"}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-2xl bg-[#1a4876] py-4 text-base font-bold text-white transition hover:bg-[#1a4876]/90 disabled:opacity-60 md:text-lg"
+          >
+            {loading ? "Procesando..." : "Pagar con WebPay"}
           </button>
-          <p className="text-center text-xs text-slate-400">Serás redirigido al portal seguro de Transbank</p>
+          <p className="text-center text-xs text-slate-400">Seras redirigido al portal seguro de Transbank</p>
         </form>
 
-        {/* Resumen del pedido */}
         <aside className="lg:col-span-1">
-          <div className="sticky top-6 bg-white rounded-2xl border p-6 space-y-4">
-            <h2 className="font-bold text-lg text-[#1a4876]">Resumen</h2>
+          <div className="space-y-4 rounded-2xl border bg-white p-5 sm:p-6 lg:sticky lg:top-6">
+            <h2 className="text-lg font-bold text-[#1a4876]">Resumen</h2>
 
             <ul className="space-y-3 divide-y">
               {items.map((it) => (
-                <li key={it.key} className="flex items-center gap-3 pt-3 first:pt-0">
+                <li key={it.key} className="flex items-start gap-3 pt-3 first:pt-0">
                   {it.imagenUrl && (
-                    <img src={it.imagenUrl} alt={it.nombre} className="w-12 h-12 rounded-lg object-cover bg-slate-100 flex-shrink-0" />
+                    <img src={it.imagenUrl} alt={it.nombre} className="h-12 w-12 flex-shrink-0 rounded-lg bg-slate-100 object-cover" />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{it.nombre}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-sm font-medium">{it.nombre}</p>
                     <p className="text-xs text-slate-500">
                       x{it.cantidad}{it.talla ? ` · T.${it.talla}` : ""}{it.color ? ` · ${it.color}` : ""}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold flex-shrink-0">{moneyCLP(it.precio * it.cantidad)}</p>
+                  <p className="flex-shrink-0 text-right text-sm font-semibold">{moneyCLP(it.precio * it.cantidad)}</p>
                 </li>
               ))}
             </ul>
 
-            {/* Cupón */}
             <div className="border-t pt-4">
-              <p className="text-sm font-medium text-slate-600 mb-2">¿Tienes un cupón?</p>
+              <p className="mb-2 text-sm font-medium text-slate-600">Tienes un cupon?</p>
               {couponValid ? (
-                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
                   <div>
                     <p className="text-xs font-bold text-emerald-700">{appliedCoupon}</p>
                     <p className="text-xs text-emerald-600">-{moneyCLP(discount)}</p>
                   </div>
-                  <button onClick={removeCoupon} className="text-xs text-slate-400 hover:text-red-500 underline">Quitar</button>
+                  <button onClick={removeCoupon} className="text-xs text-slate-400 underline hover:text-red-500">Quitar</button>
                 </div>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
-                    placeholder="CÓDIGO"
-                    className="flex-1 border rounded-lg px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
+                    placeholder="CODIGO"
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#32e1c0]"
                   />
-                  <button type="button" onClick={applyCoupon} disabled={couponLoading}
-                    className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium disabled:opacity-50">
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={couponLoading}
+                    className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  >
                     {couponLoading ? "..." : "Aplicar"}
                   </button>
                 </div>
               )}
               {couponMsg && !couponValid && (
-                <p className="text-xs mt-1 text-red-600">{couponMsg}</p>
+                <p className="mt-1 text-xs text-red-600">{couponMsg}</p>
               )}
             </div>
 
-            {/* Totales */}
-            <div className="border-t pt-4 space-y-2 text-sm">
+            <div className="space-y-2 border-t pt-4 text-sm">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal</span><span>{moneyCLP(subtotal)}</span>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-medium">
+                <div className="flex justify-between font-medium text-emerald-600">
                   <span>Descuento</span><span>-{moneyCLP(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600">
-                <span>Envío</span>
-                <span>{shipping === 0
-                  ? <span className="text-emerald-600 font-medium">Gratis 🎁</span>
-                  : moneyCLP(shipping)}
-                </span>
+                <span>Envio</span>
+                <span>{shipping === 0 ? "Gratis" : moneyCLP(shipping)}</span>
               </div>
               {shipping > 0 && (
-                <p className="text-xs text-slate-400">Envío gratis sobre {moneyCLP(FREE_SHIPPING_THRESHOLD)}</p>
+                <p className="text-xs text-slate-400">Envio gratis sobre {moneyCLP(FREE_SHIPPING_THRESHOLD)}</p>
               )}
-              <div className="flex justify-between font-bold text-base border-t pt-2">
+              <div className="flex justify-between border-t pt-2 text-base font-bold">
                 <span>Total</span><span>{moneyCLP(total)}</span>
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 text-center">
-              🔒 Pago seguro con Transbank WebPay
+            <div className="rounded-xl bg-slate-50 p-3 text-center text-xs text-slate-500">
+              Pago seguro con Transbank WebPay
             </div>
           </div>
         </aside>
