@@ -118,21 +118,25 @@ export default function Navbar() {
           >
             <Link href="/inicio" aria-label="Ir al inicio" className="shrink-0">
               <div
-                className={`relative logo-float transition-all duration-300 ${
+                className={`relative logo-float transition-all duration-300 drop-shadow-lg ${
                   compact
-                    ? "h-[56px] w-[124px] sm:h-[64px] sm:w-[144px] md:h-[100px] md:w-[225px]"
-                    : "h-[64px] w-[148px] sm:h-[72px] sm:w-[168px] md:h-[132px] md:w-[300px]"
+                    ? "h-[60px] w-[134px] sm:h-[70px] sm:w-[158px] md:h-[110px] md:w-[248px]"
+                    : "h-[72px] w-[162px] sm:h-[82px] sm:w-[184px] md:h-[148px] md:w-[332px]"
                 }`}
               >
                 <Image src="/logo.png" alt="Lookilla" fill priority className="object-contain" />
               </div>
             </Link>
 
-            <ul className="hidden flex-1 items-center justify-center gap-6 text-sm font-semibold text-white md:flex lg:gap-10 lg:text-base">
+            <ul className="hidden flex-1 items-center justify-center gap-6 text-sm font-bold text-white md:flex lg:gap-10 lg:text-base">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="transition hover:text-[#cbb4d4]">
+                  <Link
+                    href={link.href}
+                    className="group relative py-1 transition-colors hover:text-white"
+                  >
                     {link.label}
+                    <span className="absolute -bottom-0.5 left-0 h-[2px] w-0 rounded-full bg-white transition-all duration-300 group-hover:w-full" />
                   </Link>
                 </li>
               ))}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PageTransition from "@/components/PageTransition";
 
 // ✅ mismo archivo para provider y hook
 import CartProvider from "@/components/cart/CartProvider";
@@ -32,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-[#f7faff] min-h-screen">
         <CartProvider>
           <Navbar />
-          {children}
+          <PageTransition>{children}</PageTransition>
           <Footer />
           <CartDrawer /> {/* se renderiza una vez */}
         </CartProvider>
