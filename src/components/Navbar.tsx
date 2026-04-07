@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import CartIcon from "@/components/cart/CartIcon";
@@ -9,13 +10,14 @@ import { FaBars, FaInstagram, FaSearch, FaTimes, FaTiktok, FaUser } from "react-
 const EXTRA_GAP = 12;
 
 const NAV_LINKS = [
-  { href: "/inicio", label: "INICIO" },
-  { href: "/colecciones", label: "COLECCIONES" },
-  { href: "/informativo", label: "INFORMATIVOS" },
-  { href: "/catalogo", label: "VER TIENDA" },
+  { href: "/inicio",       label: "Inicio",       emoji: "🏠" },
+  { href: "/colecciones",  label: "Colecciones",  emoji: "✨" },
+  { href: "/informativo",  label: "Informativos", emoji: "📋" },
+  { href: "/catalogo",     label: "Ver Tienda",   emoji: "🛍️", badge: "NUEVO" },
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [compact, setCompact] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const topBarRef = useRef<HTMLDivElement | null>(null);
@@ -128,18 +130,33 @@ export default function Navbar() {
               </div>
             </Link>
 
-            <ul className="hidden flex-1 items-center justify-center gap-6 text-sm font-bold text-white md:flex lg:gap-10 lg:text-base">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="group relative py-1 transition-colors hover:text-white"
-                  >
-                    {link.label}
-                    <span className="absolute -bottom-0.5 left-0 h-[2px] w-0 rounded-full bg-white transition-all duration-300 group-hover:w-full" />
-                  </Link>
-                </li>
-              ))}
+            <ul className="hidden flex-1 items-center justify-center gap-2 text-sm font-bold text-white md:flex lg:gap-3 lg:text-[13px]">
+              {NAV_LINKS.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={`group relative flex items-center gap-1.5 rounded-full px-4 py-2 transition-all duration-200
+                        ${isActive
+                          ? "bg-white/25 text-white shadow-inner"
+                          : "hover:bg-white/15 hover:text-white"
+                        }`}
+                    >
+                      <span className="text-base leading-none">{link.emoji}</span>
+                      <span>{link.label}</span>
+                      {link.badge && (
+                        <span className="ml-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#a572e1]">
+                          {link.badge}
+                        </span>
+                      )}
+                      {isActive && (
+                        <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-white" />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
 
             <div className="flex shrink-0 items-center gap-3 text-xl text-white sm:gap-4 md:gap-5 md:text-2xl">
@@ -171,17 +188,26 @@ export default function Navbar() {
           {menuOpen && (
             <div className="border-t border-white/20 px-4 pb-4 pt-3 md:hidden">
               <ul className="grid gap-2 text-base font-semibold text-white">
-                {[...NAV_LINKS, { href: "/seguimiento", label: "RASTREAR PEDIDO" }].map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="block rounded-2xl px-4 py-3 transition hover:bg-white/20"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+                {[...NAV_LINKS, { href: "/seguimiento", label: "Rastrear pedido", emoji: "📦", badge: undefined }].map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-2 rounded-2xl px-4 py-3 transition ${isActive ? "bg-white/30 font-bold" : "hover:bg-white/20"}`}
+                      >
+                        <span>{link.emoji}</span>
+                        <span>{link.label}</span>
+                        {link.badge && (
+                          <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase text-[#a572e1]">
+                            {link.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
                 <li className="grid grid-cols-2 gap-2 pt-1">
                   <Link
                     href="/buscar"
