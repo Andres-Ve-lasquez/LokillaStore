@@ -10,10 +10,10 @@ import { FaBars, FaInstagram, FaSearch, FaTimes, FaTiktok, FaUser } from "react-
 const EXTRA_GAP = 12;
 
 const NAV_LINKS = [
-  { href: "/inicio",       label: "Inicio",       emoji: "🏠" },
-  { href: "/colecciones",  label: "Colecciones",  emoji: "✨" },
-  { href: "/informativo",  label: "Informativos", emoji: "📋" },
-  { href: "/catalogo",     label: "Ver Tienda",   emoji: "🛍️", badge: "NUEVO" },
+  { href: "/inicio",       label: "Inicio",       badge: undefined },
+  { href: "/colecciones",  label: "Colecciones",  badge: undefined },
+  { href: "/informativo",  label: "Informativos", badge: undefined },
+  { href: "/catalogo",     label: "Ver Tienda",   badge: "NUEVO" },
 ];
 
 export default function Navbar() {
@@ -122,15 +122,15 @@ export default function Navbar() {
               <div
                 className={`relative logo-float transition-all duration-300 drop-shadow-lg ${
                   compact
-                    ? "h-[60px] w-[134px] sm:h-[70px] sm:w-[158px] md:h-[110px] md:w-[248px]"
-                    : "h-[72px] w-[162px] sm:h-[82px] sm:w-[184px] md:h-[148px] md:w-[332px]"
+                    ? "h-[70px] w-[157px] sm:h-[80px] sm:w-[180px] md:h-[130px] md:w-[292px]"
+                    : "h-[84px] w-[189px] sm:h-[96px] sm:w-[216px] md:h-[172px] md:w-[386px]"
                 }`}
               >
                 <Image src="/logo.png" alt="Lookilla" fill priority className="object-contain" />
               </div>
             </Link>
 
-            <ul className="hidden flex-1 items-center justify-center gap-2 text-sm font-bold text-white md:flex lg:gap-3 lg:text-[13px]">
+            <ul className="hidden flex-1 items-center justify-center gap-2 text-base font-bold text-white md:flex lg:gap-3 lg:text-lg">
               {NAV_LINKS.map((link) => {
                 const isActive = pathname === link.href;
                 return (
@@ -143,7 +143,6 @@ export default function Navbar() {
                           : "hover:bg-white/15 hover:text-white"
                         }`}
                     >
-                      <span className="text-base leading-none">{link.emoji}</span>
                       <span>{link.label}</span>
                       {link.badge && (
                         <span className="ml-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#a572e1]">
@@ -188,7 +187,7 @@ export default function Navbar() {
           {menuOpen && (
             <div className="border-t border-white/20 px-4 pb-4 pt-3 md:hidden">
               <ul className="grid gap-2 text-base font-semibold text-white">
-                {[...NAV_LINKS, { href: "/seguimiento", label: "Rastrear pedido", emoji: "📦", badge: undefined }].map((link) => {
+                {[...NAV_LINKS, { href: "/seguimiento", label: "Rastrear pedido", badge: undefined }].map((link) => {
                   const isActive = pathname === link.href;
                   return (
                     <li key={link.href}>
@@ -197,7 +196,6 @@ export default function Navbar() {
                         onClick={() => setMenuOpen(false)}
                         className={`flex items-center gap-2 rounded-2xl px-4 py-3 transition ${isActive ? "bg-white/30 font-bold" : "hover:bg-white/20"}`}
                       >
-                        <span>{link.emoji}</span>
                         <span>{link.label}</span>
                         {link.badge && (
                           <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase text-[#a572e1]">
