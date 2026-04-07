@@ -80,9 +80,11 @@ export default function InicioPage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-16 pt-4 md:pt-6">
+    <main className="pb-16">
+      {/* Hero full-width sin padding */}
       <HeroCarousel slides={slides} />
 
+      <div className="mx-auto max-w-7xl px-4">
       <section className="mt-10">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-extrabold text-[#1a4876] md:text-3xl">
@@ -146,6 +148,7 @@ export default function InicioPage() {
           </div>
         </div>
       </section>
+      </div>
     </main>
   );
 }
