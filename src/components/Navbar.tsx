@@ -66,11 +66,11 @@ export default function Navbar() {
 
         {/* ── Navbar principal ───────────────────────────────── */}
         <nav className={`bg-gradient-to-r from-[#32e1c0] via-[#3bb1e6] to-[#a572e1] transition-shadow duration-300 ${scrolled ? "shadow-xl" : "shadow-md"}`}>
-          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:h-[72px] md:px-6">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:h-[88px] md:px-6 lg:h-[96px]">
 
             {/* Logo */}
             <Link href="/inicio" aria-label="Inicio" className="shrink-0">
-              <div className="relative h-[52px] w-[120px] drop-shadow-md transition-transform duration-200 hover:scale-105 md:h-[60px] md:w-[138px]">
+              <div className="relative h-[52px] w-[120px] drop-shadow-md transition-transform duration-200 hover:scale-105 md:h-[76px] md:w-[188px] lg:h-[84px] lg:w-[212px]">
                 <Image src="/logo.png" alt="Lookilla" fill priority className="object-contain" />
               </div>
             </Link>
